@@ -24,8 +24,9 @@
 
     <packaging>pom</packaging>
     <modules>
-        <module>user-service</module>
+        <module>common-module</module>
         <module>gateway</module>
+        <module>user-service</module>
     </modules>
 
     <properties>

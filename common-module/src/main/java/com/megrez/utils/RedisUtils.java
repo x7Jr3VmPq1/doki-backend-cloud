@@ -1,22 +1,16 @@
 package com.megrez.utils;
 
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class RedisUtil {
-
+public class RedisUtils {
     private final StringRedisTemplate stringRedisTemplate;
-    private final RedisTemplate redisTemplate;
 
-    public RedisUtil(StringRedisTemplate stringRedisTemplate, RedisTemplate redisTemplate) {
+    public RedisUtils(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
-        this.redisTemplate = redisTemplate;
     }
 
     // 设置一个永久KV
@@ -41,12 +35,6 @@ public class RedisUtil {
     // 基本计数器
     public void incr(String key) {
         stringRedisTemplate.opsForValue().increment(key);
-    }
-    // 搜索记录计数器
-
-    public void recordSearch(String keyword) {
-        String redisKey = RedisConstant.SEARCH_COUNT_KEY + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE); // e.g., 20250528
-        stringRedisTemplate.opsForHash().increment(redisKey, keyword, 1);
     }
 
 }
