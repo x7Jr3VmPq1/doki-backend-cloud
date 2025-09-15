@@ -25,9 +25,9 @@ public class LoginController {
     /**
      * 短信验证码登录
      *
-     * @param phone
-     * @param code
-     * @return
+     * @param phone 手机号
+     * @param code 短信验证码
+     * @return token
      */
     @GetMapping("/loginBySms")
     Result login(String phone, String code) {
@@ -40,8 +40,8 @@ public class LoginController {
     /**
      * 发送短信验证码
      *
-     * @param phone
-     * @return
+     * @param phone 手机
+     * @return 操作结果
      */
     @GetMapping("/getSmsCode")
     Result getSmsCode(String phone) {

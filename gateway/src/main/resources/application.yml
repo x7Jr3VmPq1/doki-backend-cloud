@@ -9,11 +9,26 @@ spring:
         server-addr: localhost:8848 # nacos地址
     gateway:
       routes: # 网关路由配置
-        - id: user-service
+        - id: user-service # 用户服务
           uri:
             lb://user-service
           predicates:
             - Path=/user/**
+        - id: image-service # 图片服务
+          uri:
+            lb://image-service
+          predicates:
+            - Path=/image/**
+        - id: video-upload-service # 视频上传服务
+          uri:
+            lb://video-upload-service
+          predicates:
+            - Path=/video/upload/**
+        - id: video-play-service # 视频播放服务
+          uri:
+            lb://video-play-service
+          predicates:
+            - Path=/video/play/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

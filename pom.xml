@@ -27,6 +27,18 @@
         <module>common-module</module>
         <module>gateway</module>
         <module>user-service</module>
+        <module>image-service</module>
+        <module>video-upload-service</module>
+        <module>video-processing-service</module>
+        <module>video-play-service</module>
+        <module>audit-service</module>
+        <module>comment-service</module>
+        <module>like-favorite-service</module>
+        <module>social-service</module>
+        <module>feed-service</module>
+        <module>notification-dm-service</module>
+        <module>search-service</module>
+        <module>analytics-service</module>
     </modules>
 
     <properties>

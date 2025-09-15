@@ -37,6 +37,11 @@ public class Result {
         );
     }
 
+    // 判断操作是否成功方法
+    public boolean isSuccess() {
+        return this.code == Response.SUCCESS.getCode();
+    }
+
     public int getCode() {
         return code;
     }

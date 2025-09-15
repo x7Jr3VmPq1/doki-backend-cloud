@@ -26,14 +26,22 @@ public class JWTUtil {
 
     // 解析 JWT
     public static Claims extractClaims(String token) {
+
+        String trim = token.replaceFirst("(?i)^bearer\\s+", "").trim();
+
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(token)
+                .parseClaimsJws(trim)
                 .getBody();
     }
 
     // 检查 token 是否过期
     public static boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
+    }
+
+    // 判断给定用户ID是否和载荷相同
+    public static boolean isSameUser(Integer id, String token) {
+        return extractClaims(token).get("id").equals(id);
     }
 }

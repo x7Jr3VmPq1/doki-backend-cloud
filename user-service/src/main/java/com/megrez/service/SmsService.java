@@ -36,8 +36,7 @@ public class SmsService {
      */
     public Result sendCode(String phone) {
         // 1. 判断是否60秒发送过，如果是，返回错误。
-        String code = redisUtils.get(phone + ":lock");
-        if (code != null) {
+        if (!redisUtils.setLock(phone + ":lock", "1", 60L, TimeUnit.SECONDS)) {
             return Result.error(Response.TOO_MANY_REQUEST);
         }
         // 2. 生成六位数字随机验证码

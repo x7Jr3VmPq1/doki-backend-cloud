@@ -11,8 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+
 import java.util.Random;
 
 // 登录业务实现类
@@ -27,6 +26,13 @@ public class LoginService {
         this.userMapper = userMapper;
     }
 
+    /**
+     * 短信登录逻辑
+     *
+     * @param phone 手机号
+     * @param code  短信验证码
+     * @return token/是否设置密码
+     */
     public Result loginBySms(String phone, String code) {
         // 1. 核对手机号和验证码是否有效
         boolean valid = smsService.verifyCode(phone, code);
@@ -43,7 +49,7 @@ public class LoginService {
                 newuser.setCreatedAt(System.currentTimeMillis());
                 newuser.setUpdatedAt(System.currentTimeMillis());
                 // 写入
-                userMapper.addUser(newuser);
+                userMapper.add(newuser);
                 log.info("新用户：{}", phone);
                 return Result.success(
                         new LoginSuccessVO(
@@ -66,6 +72,13 @@ public class LoginService {
         return Result.error(Response.USER_SMS_CODE_WRONG);
     }
 
+    /**
+     * 手机号密码登录
+     *
+     * @param phone    手机号
+     * @param password 密码
+     * @return token
+     */
     public Result loginByPassword(String phone, String password) {
         // 1. 根据手机号查询用户
         User userByPhone = userMapper.getUserByPhone(phone);

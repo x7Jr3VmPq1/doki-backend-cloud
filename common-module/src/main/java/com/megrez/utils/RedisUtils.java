@@ -23,6 +23,11 @@ public class RedisUtils {
         stringRedisTemplate.opsForValue().set(key, value, timeout, unit);
     }
 
+    // 设置一个锁
+    public Boolean setLock(String key, String value, long timeout, TimeUnit unit) {
+        return stringRedisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
+    }
+
 
     public String get(String key) {
         return stringRedisTemplate.opsForValue().get(key);

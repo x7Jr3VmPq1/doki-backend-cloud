@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: image-service  # 应用名
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 20020 # 端口号
+
