@@ -25,8 +25,6 @@ public class VideoPlayController {
             @RequestHeader(value = "Range", required = false) String rangeHeader,
             HttpServletResponse response) throws IOException {
 
-        log.info("播放视频：{}", rangeHeader);
-
 
         File videoFile = new File(FilesServerPath.VIDEO_PATH, filename + "\\" + "video.mp4");
         if (!videoFile.exists()) {

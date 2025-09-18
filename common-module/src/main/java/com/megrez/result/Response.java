@@ -23,8 +23,9 @@ public enum Response {
 
     // 视频服务错误
     VIDEO_UPLOAD_EMPTY_VIDEO(30001, "上传视频不能为空"),
-    VIDEO_UPLOAD_SAVE_FAILED(30002, "文件上传失败，请重试");
-
+    VIDEO_UPLOAD_SAVE_FAILED(30002, "文件上传失败，请重试"),
+    VIDEO_UPLOAD_REPEAT_DRAFT(30003,"已经存在一个草稿了!"),
+    VIDEO_UPLOAD_UPDATE_DRAFT_WRONG(30003,"修改草稿失败");
     private final int code;
     private final String message;
 

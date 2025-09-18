@@ -80,6 +80,12 @@
                 <version>3.0.3</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>3.5.5</version>
+            </dependency>
+
             <!-- JJWT API -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>

@@ -71,6 +71,7 @@ public class FileUtils {
         }
         // 获取原始文件名（含扩展名）
         String originalFilename = file.getOriginalFilename();
+        log.info("保存视频：{}",originalFilename);
         // 获取文件扩展名
         String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -78,7 +79,7 @@ public class FileUtils {
         }
         // 文件夹的唯一名称
         String uniqueFileName = UUID.randomUUID().toString();
-        // 创建文件夹，用来保存视频文件和发布时的封面图
+        // 创建文件夹，用来保存视频文件
         Path folderPath = Paths.get(FilesServerPath.VIDEO_PATH + uniqueFileName);
 
 
