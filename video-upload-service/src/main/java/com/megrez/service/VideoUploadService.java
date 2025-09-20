@@ -27,11 +27,23 @@ public class VideoUploadService {
             return Result.error(Response.VIDEO_UPLOAD_EMPTY_VIDEO); // 文件为空，上传失败
         }
 
+        // 尝试获取草稿
+        VideoDraft selectById = draftMapper.selectById(draftId);
+        if (selectById == null) {
+            return Result.error(Response.VIDEO_DRAFT_NOT_FOUND);
+        }
+
         try {
+            // 先清除草稿上可能已经上传的视频
+            FileUtils.deleteVideo(selectById.getFilename());
             // 尝试保存文件，并获取保存的文件名
             String savedName = FileUtils.saveVideo(video);
             // 创建更新草稿，更新文件名
-            VideoDraft videoDraft = VideoDraft.builder().id(draftId).filename(savedName).build();
+            VideoDraft videoDraft = VideoDraft.builder()
+                    .id(draftId)
+                    .filename(savedName)
+                    .sourceUploaded(1)
+                    .build();
             // 更新草稿
             draftMapper.updateById(videoDraft);
             return Result.success(null);

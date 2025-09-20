@@ -11,14 +11,12 @@ import java.util.List;
 public interface DraftMapper extends BaseMapper<VideoDraft> {
 
     /**
-     * 根据上传者ID获取未发布草稿信息
+     * 根据上传者ID获取未提交草稿信息
      *
      * @param uploaderId 上传者ID
      * @return 草稿列表
      */
     @Select("SELECT * FROM video_draft WHERE uploader_id = #{uploaderId} " +
-            "AND published = 0 AND deleted = 0")
+            "AND submitted = 0 AND deleted = 0")
     VideoDraft getByUploaderId(Integer uploaderId);
-
-
 }

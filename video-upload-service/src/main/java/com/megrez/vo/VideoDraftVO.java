@@ -16,5 +16,6 @@ public class VideoDraftVO {
     private String tags;
     private String coverImage;
     private Integer permission;
+    private Integer isScheduled;
     private Long scheduledTime;
 }

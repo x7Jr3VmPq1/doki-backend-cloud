@@ -23,6 +23,7 @@ public class VideoDraft {
     private String description;
     private String tags;
     private String coverImage;
+    private Integer isScheduled;
     private Long scheduledTime;
     private Long uploadTime;
     private Integer sourceUploaded;

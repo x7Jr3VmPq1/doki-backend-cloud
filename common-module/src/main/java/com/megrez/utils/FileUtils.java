@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,7 +72,7 @@ public class FileUtils {
         }
         // 获取原始文件名（含扩展名）
         String originalFilename = file.getOriginalFilename();
-        log.info("保存视频：{}",originalFilename);
+        log.info("保存视频：{}", originalFilename);
         // 获取文件扩展名
         String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -96,4 +97,35 @@ public class FileUtils {
         return uniqueFileName;
     }
 
+    /**
+     * 删除文件夹（包括其中的文件和子文件夹）
+     *
+     * @param folder 需要删除的文件夹
+     */
+    public static void deleteFolder(File folder) {
+        if (folder == null || !folder.exists()) {
+            return;
+        }
+
+        if (folder.isDirectory()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    // 如果是文件夹就递归删除
+                    if (file.isDirectory()) {
+                        deleteFolder(file);
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+        }
+        // 删除空文件夹
+        folder.delete();
+    }
+
+    public static void deleteVideo(String filename) {
+        File file = new File(FilesServerPath.VIDEO_PATH + filename);
+        deleteFolder(file);
+    }
 }
