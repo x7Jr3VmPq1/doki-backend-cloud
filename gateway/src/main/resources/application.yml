@@ -19,6 +19,11 @@ spring:
             lb://image-service
           predicates:
             - Path=/image/**
+        - id: audit-service # 审核服务
+          uri:
+            lb://audit-service
+          predicates:
+            - Path=/audit/**
         - id: video-upload-service # 视频上传服务
           uri:
             lb://video-upload-service

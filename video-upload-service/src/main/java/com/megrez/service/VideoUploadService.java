@@ -43,6 +43,7 @@ public class VideoUploadService {
                     .id(draftId)
                     .filename(savedName)
                     .sourceUploaded(1)
+                    .uploadTime(System.currentTimeMillis())
                     .build();
             // 更新草稿
             draftMapper.updateById(videoDraft);

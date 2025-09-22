@@ -6,23 +6,36 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
+    // 交换机名称
+    public static final String EXCHANGE_VIDEO_SUBMIT = "video.submit.exchange";
+    // 审核队列名
+    public static final String QUEUE_DRAFT_AUDIT = "draft.audit.queue";
+    // 转码队列名
+    public static final String QUEUE_VIDEO_PROCESSING = "video.processing.queue";
+    // 发布视频队列
+    public static final String QUEUE_VIDEO_PUBLISH = "video.publish.queue";
 
-    public static final String QUEUE_NAME = "test.queue";
-    public static final String EXCHANGE_NAME = "test.exchange";
-    public static final String ROUTING_KEY = "test.key";
+    // 发布通知队列
 
-    @Bean
-    public Queue queue() {
-        return new Queue(QUEUE_NAME, true);
-    }
-
+    // 定义交换机
     @Bean
     public DirectExchange exchange() {
-        return new DirectExchange(EXCHANGE_NAME);
+        return new DirectExchange(EXCHANGE_VIDEO_SUBMIT);
     }
 
+    // 定义队列
     @Bean
-    public Binding binding(Queue queue, DirectExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    public Queue queue() {
+        return new Queue(QUEUE_DRAFT_AUDIT, true);
     }
+
+    // 绑定队列到交换机
+    @Bean
+    public Binding binding(Queue myQueue, DirectExchange myExchange) {
+        return BindingBuilder.bind(myQueue)
+                .to(myExchange)
+                .with("my.routing.key"); // 指定路由键
+    }
+
+
 }

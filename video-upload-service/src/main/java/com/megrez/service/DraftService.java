@@ -1,10 +1,14 @@
 package com.megrez.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.megrez.config.RabbitConfig;
 import com.megrez.entity.VideoDraft;
 import com.megrez.mapper.DraftMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.FileUtils;
+import com.megrez.utils.JSONUtils;
+import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.VideoDraftVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -12,9 +16,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class DraftService {
     private final DraftMapper draftMapper;
+    private final RabbitMQUtils rabbitMQUtils;
 
-    public DraftService(DraftMapper draftMapper) {
+    public DraftService(DraftMapper draftMapper, RabbitMQUtils rabbitMQUtils, ObjectMapper objectMapper) {
         this.draftMapper = draftMapper;
+        this.rabbitMQUtils = rabbitMQUtils;
     }
 
     public Result get(Integer userId) {
@@ -112,8 +118,11 @@ public class DraftService {
             draftMapper.updateById(draft);
             // TODO 定时发布
 
-            // TODO 向消息队列发送发布作品消息
-
+            // 向审核队列发送审核消息
+            rabbitMQUtils.sendMessage(
+                    RabbitConfig.EXCHANGE_VIDEO_SUBMIT,
+                    RabbitConfig.QUEUE_DRAFT_AUDIT,
+                    JSONUtils.toJSON(draft));
             // 返回成功
             return Result.success(null);
         }
