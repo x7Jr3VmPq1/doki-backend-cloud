@@ -28,6 +28,9 @@ public class DraftAuditService {
         // 更新记录为：已通过
         draftMapper.updateById(videoDraft);
         // 发布审核已通过消息
-//        rabbitMQUtils.sendMessage(RabbitConfig.EXCHANGE_VIDEO_SUBMIT, );
+        rabbitMQUtils.sendMessage(
+                RabbitConfig.DIRECT_EXCHANGE_VIDEO_SUBMIT,
+                RabbitConfig.RK_VIDEO_PROCESSING,
+                JSONUtils.toJSON(videoDraft));
     }
 }
