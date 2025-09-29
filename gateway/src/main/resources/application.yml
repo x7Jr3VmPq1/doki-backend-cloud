@@ -39,6 +39,11 @@ spring:
             lb://video-processing-service
           predicates:
             - Path=/video/processing/**
+        - id: analytics-service # 统计分析服务
+          uri:
+            lb://analytics-service
+          predicates:
+            - Path=/analytics/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

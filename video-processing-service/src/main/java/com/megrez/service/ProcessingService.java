@@ -1,7 +1,12 @@
 package com.megrez.service;
 
 import com.megrez.config.RabbitConfig;
+import com.megrez.entity.Video;
 import com.megrez.entity.VideoDraft;
+import com.megrez.entity.VideoMetadata;
+import com.megrez.entity.VideoStatistics;
+import com.megrez.mapper.VideoMapper;
+import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.utils.FFmpegUtils;
 import com.megrez.utils.JSONUtils;
 import org.slf4j.Logger;
@@ -9,10 +14,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+
 @Service
 public class ProcessingService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProcessingService.class);
+    
+    private final VideoMapper videoMapper;
+    private final VideoStatisticsMapper videoStatisticsMapper;
+
+    public ProcessingService(VideoMapper videoMapper, VideoStatisticsMapper videoStatisticsMapper) {
+        this.videoMapper = videoMapper;
+        this.videoStatisticsMapper = videoStatisticsMapper;
+    }
 
     /**
      * 对提交的草稿视频进行转码和封面图/精灵图生成
@@ -23,29 +38,21 @@ public class ProcessingService {
     public void VideoProcessing(String draft) {
         try {
             logger.info("开始处理视频草稿: {}", draft);
-            
+
             // 解析草稿消息
             VideoDraft videoDraft = JSONUtils.fromJSON(draft, VideoDraft.class);
             String videoFilename = videoDraft.getFilename();
-            
+
             if (videoFilename == null || videoFilename.isEmpty()) {
                 logger.error("视频文件名不能为空");
                 return;
             }
-            
+
+
             logger.info("处理视频文件: {}", videoFilename);
-            
-            // 1. 视频转码处理
-            logger.info("开始视频转码...");
-            boolean transcodeSuccess = FFmpegUtils.transcodeVideo(videoFilename);
-            if (transcodeSuccess) {
-                logger.info("视频转码完成");
-            } else {
-                logger.error("视频转码失败");
-                return; // 转码失败，停止后续处理
-            }
-            
-            // 2. 生成视频缩略图
+
+
+            // 生成视频缩略图
             logger.info("开始生成视频缩略图...");
             boolean thumbnailSuccess = FFmpegUtils.createThumbnail(videoFilename);
             if (thumbnailSuccess) {
@@ -53,57 +60,113 @@ public class ProcessingService {
             } else {
                 logger.error("视频缩略图生成失败");
             }
-            
-            // 3. 生成精灵图（用于进度条预览）
-            logger.info("开始生成精灵图...");
-            boolean spriteSuccess = FFmpegUtils.createVideoSprite(videoFilename, 10);
-            if (spriteSuccess) {
-                logger.info("精灵图生成成功");
-            } else {
-                logger.error("精灵图生成失败");
-            }
-            
-            // 4. 生成高质量精灵图（可选，用于详细预览）
-            logger.info("开始生成高质量精灵图...");
-            boolean highQualitySpriteSuccess = FFmpegUtils.createHighQualitySprite(videoFilename, 15, 120, 120);
-            if (highQualitySpriteSuccess) {
-                logger.info("高质量精灵图生成成功");
-            } else {
-                logger.warn("高质量精灵图生成失败，但不影响主要功能");
-            }
-            
-            // 5. 获取视频元数据信息
+
+            // 获取视频元数据信息
             logger.info("获取视频元数据...");
-            String videoMeta = FFmpegUtils.getVideoMeta(videoFilename);
+            VideoMetadata videoMeta = FFmpegUtils.getVideoMeta(videoFilename);
             if (videoMeta != null) {
                 logger.info("视频元数据获取成功");
-                logger.debug("视频元数据: {}", videoMeta);
-            }
-            
-            // 6. 获取视频时长
-            double duration = FFmpegUtils.getVideoDuration(videoFilename);
-            if (duration > 0) {
-                logger.info("视频时长: {} 秒", duration);
+                logger.info("视频元数据: {}", videoMeta);
+                
+                // 创建Video对象，合并草稿数据和元数据
+                Video video = createVideoFromDraftAndMetadata(videoDraft, videoMeta, videoFilename);
+                logger.info("创建Video对象成功: {}", video);
+                
+                // 将Video对象插入数据库
+                try {
+                    int result = videoMapper.insert(video);
+                    if (result > 0) {
+                        logger.info("视频数据插入数据库成功，视频ID: {}", video.getId());
+                        
+                        // 创建视频统计记录
+                        createVideoStatistics(video.getId());
+                    } else {
+                        logger.error("视频数据插入数据库失败");
+                    }
+                } catch (Exception e) {
+                    logger.error("插入视频数据到数据库时发生异常: {}", e.getMessage(), e);
+                }
             } else {
-                logger.warn("无法获取视频时长");
+                logger.error("获取视频元数据失败");
             }
-            
-            // 7. 生成带时间戳信息的精灵图（用于前端精确定位）
-            logger.info("生成带时间戳信息的精灵图...");
-            FFmpegUtils.SpriteInfo spriteInfo = FFmpegUtils.createVideoSpriteWithInfo(videoFilename, 10);
-            if (spriteInfo != null) {
-                logger.info("带时间戳的精灵图生成成功");
-                logger.info("精灵图路径: {}", spriteInfo.getSpritePath());
-                logger.info("帧数: {}, 尺寸: {}x{}", 
-                    spriteInfo.getFrameCount(), 
-                    spriteInfo.getFrameWidth(), 
-                    spriteInfo.getFrameHeight());
-            }
-            
-            logger.info("视频处理完成: {}", videoFilename);
-            
+        
         } catch (Exception e) {
             logger.error("视频处理失败: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 根据草稿数据和视频元数据创建Video对象
+     *
+     * @param videoDraft 视频草稿对象
+     * @param videoMeta 视频元数据对象
+     * @param videoFilename 处理后的视频文件名
+     * @return 创建的Video对象
+     */
+    private Video createVideoFromDraftAndMetadata(VideoDraft videoDraft, VideoMetadata videoMeta, String videoFilename) {
+        long currentTime = Instant.now().toEpochMilli();
+        
+        return Video.builder()
+                // 从草稿获取基本信息
+                .uploaderId(videoDraft.getUploaderId())
+                .title(videoDraft.getTitle())
+                .description(videoDraft.getDescription())
+                .tags(videoDraft.getTags())
+                .permission(videoDraft.getPermission())
+                .allowComment(1) // 默认允许评论
+                
+                // 视频文件信息
+                .videoFilename(videoFilename)
+                .videoFormat(".mp4")
+                
+                // 从元数据获取技术参数
+                .videoWidth(videoMeta.getWidth())
+                .videoHeight(videoMeta.getHeight())
+                .videoDuration(videoMeta.getDuration() != null ? videoMeta.getDuration().intValue() : null)
+                .videoBitrate(videoMeta.getBitRate() != null ? videoMeta.getBitRate().intValue() / 1000 : null) // 转换为kbps
+                .videoSize(videoMeta.getFileSize()) // 设置文件大小
+                
+                // 时间戳设置
+                .publishTime(currentTime)
+                .createdTime(currentTime)
+                .updatedTime(currentTime)
+                
+                // 默认值
+                .deleted(0)
+                .build();
+    }
+
+    /**
+     * 创建视频统计记录
+     * 
+     * @param videoId 视频ID
+     */
+    private void createVideoStatistics(Integer videoId) {
+        try {
+            long currentTime = Instant.now().toEpochMilli();
+            
+            VideoStatistics statistics = VideoStatistics.builder()
+                    .videoId(videoId)
+                    .viewCount(0L)
+                    .likeCount(0L)
+                    .dislikeCount(0L)
+                    .commentCount(0L)
+                    .shareCount(0L)
+                    .favoriteCount(0L)
+                    .downloadCount(0L)
+                    .createdTime(currentTime)
+                    .updatedTime(currentTime)
+                    .deleted(0)
+                    .build();
+            
+            int result = videoStatisticsMapper.insert(statistics);
+            if (result > 0) {
+                logger.info("视频统计记录创建成功，视频ID: {}", videoId);
+            } else {
+                logger.error("视频统计记录创建失败，视频ID: {}", videoId);
+            }
+        } catch (Exception e) {
+            logger.error("创建视频统计记录时发生异常，视频ID: {}, 错误: {}", videoId, e.getMessage(), e);
         }
     }
 }

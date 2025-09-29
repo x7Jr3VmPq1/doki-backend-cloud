@@ -14,18 +14,8 @@ public class FFmpegTest {
     }
 
     @Test
-    void testGetVideoDuration() {
-        System.out.println(FFmpegUtils.getVideoDuration("bf4c21a8-0d6b-4257-bc80-2a9f56718162"));
-    }
-
-    @Test
     void testGetVideoMeta() {
         System.out.println(FFmpegUtils.getVideoMeta("bf4c21a8-0d6b-4257-bc80-2a9f56718162"));
     }
 
-
-    @Test
-    void testCreateSprite() {
-        System.out.println(FFmpegUtils.createVideoSprite("bf4c21a8-0d6b-4257-bc80-2a9f56718162",10));
-    }
 }
