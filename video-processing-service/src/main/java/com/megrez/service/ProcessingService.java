@@ -9,6 +9,7 @@ import com.megrez.mapper.VideoMapper;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.utils.FFmpegUtils;
 import com.megrez.utils.JSONUtils;
+import com.megrez.utils.RabbitMQUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -20,13 +21,15 @@ import java.time.Instant;
 public class ProcessingService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProcessingService.class);
-    
+
     private final VideoMapper videoMapper;
     private final VideoStatisticsMapper videoStatisticsMapper;
+    private final RabbitMQUtils rabbitMQUtils;
 
-    public ProcessingService(VideoMapper videoMapper, VideoStatisticsMapper videoStatisticsMapper) {
+    public ProcessingService(VideoMapper videoMapper, VideoStatisticsMapper videoStatisticsMapper, RabbitMQUtils rabbitMQUtils) {
         this.videoMapper = videoMapper;
         this.videoStatisticsMapper = videoStatisticsMapper;
+        this.rabbitMQUtils = rabbitMQUtils;
     }
 
     /**
@@ -67,29 +70,26 @@ public class ProcessingService {
             if (videoMeta != null) {
                 logger.info("视频元数据获取成功");
                 logger.info("视频元数据: {}", videoMeta);
-                
+
                 // 创建Video对象，合并草稿数据和元数据
                 Video video = createVideoFromDraftAndMetadata(videoDraft, videoMeta, videoFilename);
                 logger.info("创建Video对象成功: {}", video);
-                
-                // 将Video对象插入数据库
+
                 try {
-                    int result = videoMapper.insert(video);
-                    if (result > 0) {
-                        logger.info("视频数据插入数据库成功，视频ID: {}", video.getId());
-                        
-                        // 创建视频统计记录
-                        createVideoStatistics(video.getId());
-                    } else {
-                        logger.error("视频数据插入数据库失败");
-                    }
+                    // 发送发布视频消息
+                    rabbitMQUtils.sendMessage(
+                            RabbitConfig.DIRECT_EXCHANGE_VIDEO_SUBMIT,
+                            RabbitConfig.RK_VIDEO_PUBLISH,
+                            JSONUtils.toJSON(video)
+                    );
+
                 } catch (Exception e) {
                     logger.error("插入视频数据到数据库时发生异常: {}", e.getMessage(), e);
                 }
             } else {
                 logger.error("获取视频元数据失败");
             }
-        
+
         } catch (Exception e) {
             logger.error("视频处理失败: {}", e.getMessage(), e);
         }
@@ -98,14 +98,14 @@ public class ProcessingService {
     /**
      * 根据草稿数据和视频元数据创建Video对象
      *
-     * @param videoDraft 视频草稿对象
-     * @param videoMeta 视频元数据对象
+     * @param videoDraft    视频草稿对象
+     * @param videoMeta     视频元数据对象
      * @param videoFilename 处理后的视频文件名
      * @return 创建的Video对象
      */
     private Video createVideoFromDraftAndMetadata(VideoDraft videoDraft, VideoMetadata videoMeta, String videoFilename) {
         long currentTime = Instant.now().toEpochMilli();
-        
+
         return Video.builder()
                 // 从草稿获取基本信息
                 .uploaderId(videoDraft.getUploaderId())
@@ -114,23 +114,23 @@ public class ProcessingService {
                 .tags(videoDraft.getTags())
                 .permission(videoDraft.getPermission())
                 .allowComment(1) // 默认允许评论
-                
+
                 // 视频文件信息
                 .videoFilename(videoFilename)
                 .videoFormat(".mp4")
-                
+
                 // 从元数据获取技术参数
                 .videoWidth(videoMeta.getWidth())
                 .videoHeight(videoMeta.getHeight())
                 .videoDuration(videoMeta.getDuration() != null ? videoMeta.getDuration().intValue() : null)
                 .videoBitrate(videoMeta.getBitRate() != null ? videoMeta.getBitRate().intValue() / 1000 : null) // 转换为kbps
                 .videoSize(videoMeta.getFileSize()) // 设置文件大小
-                
+
                 // 时间戳设置
                 .publishTime(currentTime)
                 .createdTime(currentTime)
                 .updatedTime(currentTime)
-                
+
                 // 默认值
                 .deleted(0)
                 .build();
@@ -138,13 +138,13 @@ public class ProcessingService {
 
     /**
      * 创建视频统计记录
-     * 
+     *
      * @param videoId 视频ID
      */
     private void createVideoStatistics(Integer videoId) {
         try {
             long currentTime = Instant.now().toEpochMilli();
-            
+
             VideoStatistics statistics = VideoStatistics.builder()
                     .videoId(videoId)
                     .viewCount(0L)
@@ -158,7 +158,7 @@ public class ProcessingService {
                     .updatedTime(currentTime)
                     .deleted(0)
                     .build();
-            
+
             int result = videoStatisticsMapper.insert(statistics);
             if (result > 0) {
                 logger.info("视频统计记录创建成功，视频ID: {}", videoId);
