@@ -1,10 +1,11 @@
 package com.megrez.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.megrez.entity.User;
 import org.apache.ibatis.annotations.*;
 
 @Mapper
-public interface UserMapper {
+public interface UserMapper extends BaseMapper<User> {
 
     /**
      * 根据手机号查询用户信息
@@ -38,7 +39,7 @@ public interface UserMapper {
     /**
      * 修改密码
      *
-     * @param phone  手机号
+     * @param phone        手机号
      * @param passwordHash 加密密码
      */
     @Update("UPDATE user SET password_hash = #{passwordHash} WHERE phone_number = #{phone}")

@@ -19,9 +19,11 @@
 
     <dependencies>
 
+
         <dependency>
             <groupId>com.megrez</groupId>
             <artifactId>common-module</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>

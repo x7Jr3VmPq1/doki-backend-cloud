@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: feed-service  # 应用名
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 30309 # 端口号
+
+
+
+
+

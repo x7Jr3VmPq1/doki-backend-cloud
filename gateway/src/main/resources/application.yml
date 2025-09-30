@@ -44,6 +44,11 @@ spring:
             lb://analytics-service
           predicates:
             - Path=/analytics/**
+        - id: feed-service # 推荐服务
+          uri:
+            lb://feed-service
+          predicates:
+            - Path=/feed/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

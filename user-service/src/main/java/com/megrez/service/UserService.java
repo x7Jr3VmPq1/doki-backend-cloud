@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.util.HashMap;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -91,8 +92,19 @@ public class UserService {
             return Result.error(Response.USER_AVATAR_UPLOAD_WRONG);
         } catch (Exception e) {
             // 4. 服务异常，打印错误信息
-            log.error("上传服务异常：{}",e.getMessage());
+            log.error("上传服务异常：{}", e.getMessage());
             return Result.error(Response.USER_AVATAR_UPLOAD_WRONG);
         }
+    }
+
+    /**
+     * 根据用户ID批量获取用户信息
+     *
+     * @param userId 用户ID集合
+     * @return 用户信息
+     */
+    public Result getById(List<Integer> userId) {
+        List<User> users = userMapper.selectBatchIds(userId);
+        return Result.success(users);
     }
 }

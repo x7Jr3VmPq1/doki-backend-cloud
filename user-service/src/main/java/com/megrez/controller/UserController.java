@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -52,11 +54,21 @@ public class UserController {
         }
 
         return userService.update(user);
+    }
 
-//        if (Validator.checkUser(user)) {
-//            return userService.update(user);
-//        }
 
-//        return Result.error(Response.USER_UPDATE_PARAMS_WRONG);
+    /**
+     * 根据用户ID批量获取用户信息
+     *
+     * @param userId 用户ID集合
+     * @return 用户信息
+     */
+    @PostMapping("/userinfo")
+    public Result getUserinfoById(@RequestBody List<Integer> userId) {
+        log.info("查询用户资料，IDs：{}", userId);
+        if (userId.isEmpty()) {
+            return Result.success(null);
+        }
+        return userService.getById(userId);
     }
 }

@@ -1,6 +1,6 @@
 package com.megrez.service;
 
-import com.megrez.config.RabbitConfig;
+import com.megrez.constant.QueueConstants;
 import com.megrez.entity.VideoDraft;
 import com.megrez.mapper.DraftMapper;
 import com.megrez.utils.JSONUtils;
@@ -18,7 +18,7 @@ public class DraftAuditService {
         this.rabbitMQUtils = rabbitMQUtils;
     }
 
-    @RabbitListener(queues = RabbitConfig.QUEUE_DRAFT_AUDIT)
+    @RabbitListener(queues = QueueConstants.QUEUE_DRAFT_AUDIT)
     public void DraftAudit(String draft) {
         // 解析消息中的草稿实体
         VideoDraft videoDraft = JSONUtils.fromJSON(draft, VideoDraft.class);
@@ -29,8 +29,8 @@ public class DraftAuditService {
         draftMapper.updateById(videoDraft);
         // 发布审核已通过消息
         rabbitMQUtils.sendMessage(
-                RabbitConfig.DIRECT_EXCHANGE_VIDEO_SUBMIT,
-                RabbitConfig.RK_VIDEO_PROCESSING,
+                QueueConstants.DIRECT_EXCHANGE_VIDEO_SUBMIT,
+                QueueConstants.RK_VIDEO_PROCESSING,
                 JSONUtils.toJSON(videoDraft));
     }
 }

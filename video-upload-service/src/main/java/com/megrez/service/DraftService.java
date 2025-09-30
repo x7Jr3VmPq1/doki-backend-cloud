@@ -1,7 +1,7 @@
 package com.megrez.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.megrez.config.RabbitConfig;
+import com.megrez.constant.QueueConstants;
 import com.megrez.entity.VideoDraft;
 import com.megrez.mapper.DraftMapper;
 import com.megrez.result.Response;
@@ -120,8 +120,8 @@ public class DraftService {
 
             // 向审核队列发送审核消息
             rabbitMQUtils.sendMessage(
-                    RabbitConfig.DIRECT_EXCHANGE_VIDEO_SUBMIT,
-                    RabbitConfig.RK_DRAFT_AUDIT,
+                    QueueConstants.DIRECT_EXCHANGE_VIDEO_SUBMIT,
+                    QueueConstants.RK_DRAFT_AUDIT,
                     JSONUtils.toJSON(draft));
             // 返回成功
             return Result.success(null);

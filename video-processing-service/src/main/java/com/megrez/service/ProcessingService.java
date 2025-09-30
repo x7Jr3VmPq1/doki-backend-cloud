@@ -1,6 +1,6 @@
 package com.megrez.service;
 
-import com.megrez.config.RabbitConfig;
+import com.megrez.constant.QueueConstants;
 import com.megrez.entity.Video;
 import com.megrez.entity.VideoDraft;
 import com.megrez.entity.VideoMetadata;
@@ -37,7 +37,7 @@ public class ProcessingService {
      *
      * @param draft 草稿消息
      */
-    @RabbitListener(queues = RabbitConfig.QUEUE_VIDEO_PROCESSING)
+    @RabbitListener(queues = QueueConstants.QUEUE_VIDEO_PROCESSING)
     public void VideoProcessing(String draft) {
         try {
             logger.info("开始处理视频草稿: {}", draft);
@@ -78,8 +78,8 @@ public class ProcessingService {
                 try {
                     // 发送发布视频消息
                     rabbitMQUtils.sendMessage(
-                            RabbitConfig.DIRECT_EXCHANGE_VIDEO_SUBMIT,
-                            RabbitConfig.RK_VIDEO_PUBLISH,
+                            QueueConstants.DIRECT_EXCHANGE_VIDEO_SUBMIT,
+                            QueueConstants.RK_VIDEO_PUBLISH,
                             JSONUtils.toJSON(video)
                     );
 
