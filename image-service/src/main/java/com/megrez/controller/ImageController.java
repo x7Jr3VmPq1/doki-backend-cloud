@@ -27,7 +27,7 @@ public class ImageController {
 
     // 上传图片
     @PostMapping("/{type}/upload")
-    public Result upload(@RequestBody Map<String, String> base64,
+    public Result<String> upload(@RequestBody Map<String, String> base64,
                          @PathVariable String type) throws Exception {
         log.info("上传图片类型：{}", type);
         if (!FileUtils.isBase64(base64.get("base64"))) {

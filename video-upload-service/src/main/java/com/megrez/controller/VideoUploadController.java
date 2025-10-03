@@ -19,7 +19,7 @@ public class VideoUploadController {
     }
 
     @PostMapping
-    public Result upload(@RequestParam("file") MultipartFile video,
+    public Result<String> upload(@RequestParam("file") MultipartFile video,
                          @RequestParam("draft_id") Integer draftId) {
         return videoUploadService.upload(video, draftId);
     }

@@ -33,7 +33,7 @@ public class LoginService {
      * @param code  短信验证码
      * @return token/是否设置密码
      */
-    public Result loginBySms(String phone, String code) {
+    public Result<LoginSuccessVO> loginBySms(String phone, String code) {
         // 1. 核对手机号和验证码是否有效
         boolean valid = smsService.verifyCode(phone, code);
         if (valid) {
@@ -79,7 +79,7 @@ public class LoginService {
      * @param password 密码
      * @return token
      */
-    public Result loginByPassword(String phone, String password) {
+    public Result<String> loginByPassword(String phone, String password) {
         // 1. 根据手机号查询用户
         User userByPhone = userMapper.getUserByPhone(phone);
         // 2. 没有查询到用户、用户没有设置密码，或密码不匹配，返回错误

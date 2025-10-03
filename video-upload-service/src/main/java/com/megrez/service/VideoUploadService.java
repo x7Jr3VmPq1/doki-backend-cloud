@@ -22,7 +22,7 @@ public class VideoUploadService {
         this.draftMapper = draftMapper;
     }
 
-    public Result upload(MultipartFile video, Integer draftId) {
+    public Result<String> upload(MultipartFile video, Integer draftId) {
         if (video.isEmpty()) {
             return Result.error(Response.VIDEO_UPLOAD_EMPTY_VIDEO); // 文件为空，上传失败
         }

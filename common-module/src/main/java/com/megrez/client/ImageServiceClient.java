@@ -7,6 +7,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Map;
 
+/**
+ * 图片服务客户端
+ * 
+ * 提供图片处理相关的远程调用接口
+ * 
+ * @author Doki Team
+ * @since 1.0.0
+ */
 @FeignClient("image-service")
 public interface ImageServiceClient {
 
@@ -17,7 +25,7 @@ public interface ImageServiceClient {
      * @return 文件名
      */
     @PostMapping("/image/avatar/upload")
-    Result uploadAvatar(@RequestBody Map<String, String> base64);
+    Result<String> uploadAvatar(@RequestBody Map<String, String> base64);
 
     /**
      * 上传封面图服务
@@ -26,7 +34,5 @@ public interface ImageServiceClient {
      * @return 文件名
      */
     @PostMapping("/image/cover/upload")
-    Result uploadCover(@RequestBody Map<String, String> base64);
-
-
+    Result<String> uploadCover(@RequestBody Map<String, String> base64);
 }

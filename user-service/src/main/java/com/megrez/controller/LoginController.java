@@ -5,6 +5,7 @@ import com.megrez.result.Result;
 import com.megrez.service.LoginService;
 import com.megrez.service.SmsService;
 import com.megrez.utils.Validator;
+import com.megrez.vo.LoginSuccessVO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,7 +31,7 @@ public class LoginController {
      * @return token
      */
     @GetMapping("/loginBySms")
-    Result login(String phone, String code) {
+    Result<LoginSuccessVO> login(String phone, String code) {
         if (Validator.checkPhone(phone) && Validator.checkCode(code)) {
             return loginService.loginBySms(phone, code);
         }
@@ -44,7 +45,7 @@ public class LoginController {
      * @return 操作结果
      */
     @GetMapping("/getSmsCode")
-    Result getSmsCode(String phone) {
+    Result<Void> getSmsCode(String phone) {
         if (Validator.checkPhone(phone)) {
             return smsService.sendCode(phone);
         }

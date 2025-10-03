@@ -26,30 +26,30 @@ public class DraftController {
      * @return 草稿视图类
      */
     @GetMapping
-    public Result get(Integer userId) {
+    public Result<VideoDraftVO> get(Integer userId) {
         return draftService.get(10000);
     }
 
     @PostMapping("/create")
-    public Result create(Integer userId) {
+    public Result<VideoDraftVO> create(Integer userId) {
         return draftService.createDraft(10000);
     }
 
     @PutMapping("/update")
-    public Result update(Integer userId, @RequestBody VideoDraftVO draft) {
+    public Result<VideoDraftVO> update(Integer userId, @RequestBody VideoDraftVO draft) {
         log.info("更新草稿：{}", draft);
         return draftService.updateDraft(10000, draft);
     }
 
     @DeleteMapping("/delete")
-    public Result delete(Integer userId,
+    public Result<Void> delete(Integer userId,
                          @RequestParam("draftId") Integer draftId) {
         log.info("删除草稿：{}", draftId);
         return draftService.delete(10000, draftId);
     }
 
     @PostMapping("/submit")
-    public Result submit(Integer userId,
+    public Result<Void> submit(Integer userId,
                          @RequestBody VideoDraftVO draft) {
         log.info("提交发布：{}", draft);
         return draftService.submit(10000, draft);

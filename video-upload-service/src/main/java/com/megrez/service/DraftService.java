@@ -23,7 +23,7 @@ public class DraftService {
         this.rabbitMQUtils = rabbitMQUtils;
     }
 
-    public Result get(Integer userId) {
+    public Result<VideoDraftVO> get(Integer userId) {
         // 查询原草稿
         VideoDraft byUploaderId = draftMapper.getByUploaderId(userId);
         if (byUploaderId == null) {
@@ -38,7 +38,7 @@ public class DraftService {
         return Result.success(videoDraftVO);
     }
 
-    public Result createDraft(Integer userId) {
+    public Result<VideoDraftVO> createDraft(Integer userId) {
         // 先查询是否已经存在一个草稿
         VideoDraft byUploaderId = draftMapper.getByUploaderId(userId);
         if (byUploaderId != null) {
@@ -62,7 +62,7 @@ public class DraftService {
         return Result.success(draftVO);
     }
 
-    public Result updateDraft(Integer userId, VideoDraftVO updateDraft) {
+    public Result<VideoDraftVO> updateDraft(Integer userId, VideoDraftVO updateDraft) {
         // 先查询草稿是否存在
         VideoDraft draft = draftMapper.selectById(updateDraft.getId());
         // 判断权限
@@ -79,7 +79,7 @@ public class DraftService {
         return Result.error(Response.VIDEO_UPLOAD_UPDATE_DRAFT_WRONG);
     }
 
-    public Result delete(Integer userId, Integer draftId) {
+    public Result<Void> delete(Integer userId, Integer draftId) {
         // 先查询草稿是否存在
         VideoDraft draft = draftMapper.selectById(draftId);
         // 判断权限
@@ -103,7 +103,7 @@ public class DraftService {
      * @param draftVO 草稿参数
      * @return 操作结果
      */
-    public Result submit(Integer userId, VideoDraftVO draftVO) {
+    public Result<Void> submit(Integer userId, VideoDraftVO draftVO) {
         // 先查询草稿是否存在
         VideoDraft draft = draftMapper.selectById(draftVO.getId());
         // 判断权限

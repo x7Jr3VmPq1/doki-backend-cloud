@@ -34,7 +34,7 @@ public class SmsService {
      * @param phone 手机号
      * @return 成功提示
      */
-    public Result sendCode(String phone) {
+    public Result<Void> sendCode(String phone) {
         // 1. 判断是否60秒发送过，如果是，返回错误。
         if (!redisUtils.setLock(phone + ":lock", "1", 60L, TimeUnit.SECONDS)) {
             return Result.error(Response.TOO_MANY_REQUEST);

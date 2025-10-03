@@ -34,7 +34,7 @@ public class UserService {
      * @param username 用户名
      * @return 用户基本信息
      */
-    public Result getByName(String username) {
+    public Result<User> getByName(String username) {
         User user = userMapper.findUserByName(username);
         return user != null ? Result.success(user)
                 : Result.error(Response.USER_NOT_FOUND_WRONG);
@@ -48,7 +48,7 @@ public class UserService {
      * @param password 密码
      * @return 操作结果
      */
-    public Result setPassword(String phone, String code, String password) {
+    public Result<Void> setPassword(String phone, String code, String password) {
         // 1. 验证短信验证码
         boolean valid = smsService.verifyCode(phone, code);
         if (valid) {
@@ -66,18 +66,18 @@ public class UserService {
     }
 
 
-    public Result update(User user) {
+    public Result<User> update(User user) {
         // 1. 调用图片上传服务，获取上传后的文件名。
         HashMap<String, String> base64 = new HashMap<>();
         base64.put("base64", user.getAvatarUrl());
 
         try {
-            Result result = imageServiceClient.uploadAvatar(base64);
+            Result<String> result = imageServiceClient.uploadAvatar(base64);
 
             // 2. 如果成功，进行修改用户信息。
             if (result.isSuccess()) {
                 // 把头像URL赋值为获取到的文件名
-                user.setAvatarUrl((String) result.getData());
+                user.setAvatarUrl(result.getData());
                 // 更新写入
                 int updated = userMapper.update(user);
                 if (updated == 1) {
@@ -103,7 +103,7 @@ public class UserService {
      * @param userId 用户ID集合
      * @return 用户信息
      */
-    public Result getById(List<Integer> userId) {
+    public Result<List<User>> getById(List<Integer> userId) {
         List<User> users = userMapper.selectBatchIds(userId);
         return Result.success(users);
     }

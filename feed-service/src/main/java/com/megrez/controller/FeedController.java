@@ -1,10 +1,13 @@
 package com.megrez.controller;
 
+import com.megrez.entity.Video;
 import com.megrez.result.Result;
 import com.megrez.service.RandomService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/feed")
@@ -16,7 +19,7 @@ public class FeedController {
     }
 
     @GetMapping("/random")
-    public Result getRandomVideos() {
+    public Result<List<Video>> getRandomVideos() {
         return randomService.randomVideo();
     }
 }

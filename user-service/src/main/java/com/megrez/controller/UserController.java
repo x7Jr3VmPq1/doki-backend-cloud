@@ -30,7 +30,7 @@ public class UserController {
      * @return 用户名，头像，个人简介
      */
     @GetMapping("/{username}")
-    public Result getUserInfo(@PathVariable String username) {
+    public Result<User> getUserInfo(@PathVariable String username) {
         return userService.getByName(username);
     }
 
@@ -42,7 +42,7 @@ public class UserController {
      * @return 操作结果
      */
     @PutMapping("/update")
-    public Result update(@RequestBody User user,
+    public Result<User> update(@RequestBody User user,
                          @RequestHeader("Authorization") String token) {
 
         log.info("修改用户信息：{}", user.getId());
@@ -64,7 +64,7 @@ public class UserController {
      * @return 用户信息
      */
     @PostMapping("/userinfo")
-    public Result getUserinfoById(@RequestBody List<Integer> userId) {
+    public Result<List<User>> getUserinfoById(@RequestBody List<Integer> userId) {
         log.info("查询用户资料，IDs：{}", userId);
         if (userId.isEmpty()) {
             return Result.success(null);
