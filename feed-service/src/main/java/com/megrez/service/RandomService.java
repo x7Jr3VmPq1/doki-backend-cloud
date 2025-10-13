@@ -1,10 +1,5 @@
 package com.megrez.service;
-
-import com.megrez.client.AnalyticsServiceClient;
-import com.megrez.client.UserServiceClient;
-import com.megrez.entity.User;
 import com.megrez.entity.Video;
-import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Result;
 import org.springframework.stereotype.Service;
@@ -19,7 +14,6 @@ public class RandomService {
 
     public RandomService(VideoMapper videoMapper) {
         this.videoMapper = videoMapper;
-
     }
 
     /**

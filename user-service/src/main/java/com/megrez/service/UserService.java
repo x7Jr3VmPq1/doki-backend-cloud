@@ -5,8 +5,10 @@ import com.megrez.entity.User;
 import com.megrez.mapper.UserMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
+import com.megrez.utils.JWTUtil;
 import com.megrez.utils.PasswordUtils;
 
+import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -106,5 +108,22 @@ public class UserService {
     public Result<List<User>> getById(List<Integer> userId) {
         List<User> users = userMapper.selectBatchIds(userId);
         return Result.success(users);
+    }
+
+    /**
+     * 根据token查询用户信息
+     *
+     * @param token token
+     * @return 用户信息
+     */
+    public Result<User> getUserinfoByToken(String token) {
+        // 1. 解析载荷
+        Claims claims = JWTUtil.extractClaims(token);
+        if (claims == null) {
+            return Result.error(Response.FORBIDDEN);
+        }
+        Integer id = (Integer) claims.get("id");
+        // 2. 查询用户信息
+        return Result.success(userMapper.selectById(id));
     }
 }

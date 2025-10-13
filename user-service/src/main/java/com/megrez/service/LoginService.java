@@ -1,7 +1,9 @@
 package com.megrez.service;
 
 import com.megrez.entity.User;
+import com.megrez.entity.UserStatistics;
 import com.megrez.mapper.UserMapper;
+import com.megrez.mapper.UserStatisticsMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JWTUtil;
@@ -20,10 +22,12 @@ public class LoginService {
     private static final Logger log = LoggerFactory.getLogger(LoginService.class);
     private final SmsService smsService;
     private final UserMapper userMapper;
+    private final UserStatisticsMapper userStatisticsMapper;
 
-    public LoginService(SmsService smsService, UserMapper userMapper) {
+    public LoginService(SmsService smsService, UserMapper userMapper, UserStatisticsMapper userStatisticsMapper) {
         this.smsService = smsService;
         this.userMapper = userMapper;
+        this.userStatisticsMapper = userStatisticsMapper;
     }
 
     /**
@@ -45,11 +49,18 @@ public class LoginService {
                 // 构建用户信息
                 newuser.setPhoneNumber(phone);
                 newuser.setUsername("新用户" + new Random().nextInt(100000000));
-                newuser.setAvatarUrl("http://localhost:8081/cat.jpeg");
+                newuser.setAvatarUrl("default.jpg");
                 newuser.setCreatedAt(System.currentTimeMillis());
                 newuser.setUpdatedAt(System.currentTimeMillis());
                 // 写入
                 userMapper.add(newuser);
+                userStatisticsMapper.insert(
+                        UserStatistics.builder()
+                                .userId(newuser.getId())
+                                .createdAt(System.currentTimeMillis())
+                                .updatedAt(System.currentTimeMillis())
+                                .build()
+                );
                 log.info("新用户：{}", phone);
                 return Result.success(
                         new LoginSuccessVO(

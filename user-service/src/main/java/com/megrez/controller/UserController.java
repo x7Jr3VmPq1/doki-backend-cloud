@@ -43,7 +43,7 @@ public class UserController {
      */
     @PutMapping("/update")
     public Result<User> update(@RequestBody User user,
-                         @RequestHeader("Authorization") String token) {
+                               @RequestHeader("Authorization") String token) {
 
         log.info("修改用户信息：{}", user.getId());
         if (token == null) {
@@ -70,5 +70,14 @@ public class UserController {
             return Result.success(null);
         }
         return userService.getById(userId);
+    }
+
+    @GetMapping("/userinfo")
+    public Result<User> getUserinfoByToken(@RequestHeader(value = "Authorization", required = false) String token) {
+        log.info("获取用户信息：{}", token);
+        if (token == null) {
+            return Result.error(Response.FORBIDDEN);
+        }
+        return userService.getUserinfoByToken(token);
     }
 }

@@ -25,15 +25,27 @@ public class JWTUtil {
     }
 
     // 解析 JWT
+    // 解析 JWT
     public static Claims extractClaims(String token) {
+        try {
+            if (token == null || token.trim().isEmpty()) {
+                return null;
+            }
 
-        String trim = token.replaceFirst("(?i)^bearer\\s+", "").trim();
+            // 去掉前缀 "Bearer "（忽略大小写）
+            String trim = token.replaceFirst("(?i)^bearer\\s+", "").trim();
 
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(trim)
-                .getBody();
+            // 解析并返回 claims
+            return Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(trim)
+                    .getBody();
+        } catch (Exception e) {
+            // 解析失败，返回 null
+            return null;
+        }
     }
+
 
     // 检查 token 是否过期
     public static boolean isTokenExpired(String token) {

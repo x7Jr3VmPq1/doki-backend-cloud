@@ -1,14 +1,13 @@
 package com.megrez.controller;
 
+import com.megrez.entity.UserStatistics;
 import com.megrez.entity.VideoStatistics;
+import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.DataService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,5 +26,15 @@ public class DataController {
     public Result<List<VideoStatistics>> getVideoStatById(@RequestBody List<Integer> ids) {
         log.info("查询视频统计信息：{}", ids);
         return dataService.getVideoStatById(ids);
+    }
+
+
+    @GetMapping("/user")
+    public Result<UserStatistics> getUserStatistics(@RequestParam("id") Integer id) {
+        log.info("查询用户关注/粉丝数量：{}", id);
+        if (id <= 0) {
+            return Result.error(Response.USER_NOT_FOUND_WRONG);
+        }
+        return dataService.getUserStatistics(id);
     }
 }

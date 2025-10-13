@@ -3,8 +3,7 @@ package com.megrez.service;
 import com.megrez.constant.QueueConstants;
 import com.megrez.entity.Video;
 import com.megrez.entity.VideoStatistics;
-import com.megrez.mapper.StatisticsMapper;
-import com.megrez.rabbitConfig.VideoPublishedExchangeConfig;
+import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.utils.JSONUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +13,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class IncreaseService {
 
-    private final StatisticsMapper statisticsMapper;
+    private final VideoStatisticsMapper statisticsMapper;
     private static final Logger log = LoggerFactory.getLogger(IncreaseService.class);
 
-    public IncreaseService(StatisticsMapper statisticsMapper) {
+    public IncreaseService(VideoStatisticsMapper statisticsMapper) {
         this.statisticsMapper = statisticsMapper;
     }
 
