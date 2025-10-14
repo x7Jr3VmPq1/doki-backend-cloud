@@ -49,6 +49,11 @@ spring:
             lb://feed-service
           predicates:
             - Path=/feed/**
+        - id: like-favorite-service # 视频点赞/收藏服务
+          uri:
+            lb://like-favorite-service
+          predicates:
+            - Path=/like/**,/favorite/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
