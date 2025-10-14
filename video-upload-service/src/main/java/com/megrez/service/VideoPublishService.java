@@ -1,8 +1,9 @@
 package com.megrez.service;
 
-import com.megrez.constant.QueueConstants;
 import com.megrez.entity.Video;
 import com.megrez.mapper.VideoMapper;
+import com.megrez.rabbit.exchange.VideoPublishedExchange;
+import com.megrez.rabbit.exchange.VideoSubmitExchange;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class VideoPublishService {
         this.rabbitMQUtils = rabbitMQUtils;
     }
 
-    @RabbitListener(queues = QueueConstants.QUEUE_VIDEO_PUBLISH)
+    @RabbitListener(queues = VideoSubmitExchange.QUEUE_VIDEO_PUBLISH)
     public void updateVideoState(String videoMessage) {
         // 解析消息体
         Video video = JSONUtils.fromJSON(videoMessage, Video.class);
@@ -37,7 +38,7 @@ public class VideoPublishService {
             // 发送视频发布成功消息到VIDEO_PUBLISHED交换机
             // 消息会同时发送到搜索、通知、统计分析三个队列
             rabbitMQUtils.sendMessage(
-                    QueueConstants.FANOUT_EXCHANGE_VIDEO_PUBLISHED,
+                    VideoPublishedExchange.FANOUT_EXCHANGE_VIDEO_PUBLISHED,
                     "",
                     JSONUtils.toJSON(video)
             );

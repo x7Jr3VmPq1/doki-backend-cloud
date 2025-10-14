@@ -1,9 +1,9 @@
 package com.megrez.service;
 
-import com.megrez.constant.QueueConstants;
 import com.megrez.entity.Video;
 import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.VideoStatisticsMapper;
+import com.megrez.rabbit.exchange.VideoPublishedExchange;
 import com.megrez.utils.JSONUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ public class IncreaseService {
      *
      * @param video 新增视频消息实体
      */
-    @RabbitListener(queues = QueueConstants.QUEUE_ANALYTICS)
+    @RabbitListener(queues = VideoPublishedExchange.QUEUE_ANALYTICS)
     public void createVideoStatisticsRecord(String video) {
         try {
             // 解析视频消息
