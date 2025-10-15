@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: comment-service  # 应用名
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 30311 # 端口号

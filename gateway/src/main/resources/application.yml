@@ -54,6 +54,11 @@ spring:
             lb://like-favorite-service
           predicates:
             - Path=/like/**,/favorite/**
+        - id: comment-service # 评论服务
+          uri:
+            lb://comment-service
+          predicates:
+            - Path=/comment/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
