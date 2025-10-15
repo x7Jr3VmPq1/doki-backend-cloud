@@ -6,11 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 需要获取当前操作用户ID时，使用这个注解
+ * 获取当前操作用户ID
  * 在controller层的参数中使用
  * 如： @CurrentUser Integer userId
+ * required = true → 必须登录，false → 可选登录（允许游客）
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CurrentUser {
+    boolean required() default true;
 }

@@ -22,6 +22,11 @@ public class VideoLikeService {
         this.videoStatisticsMapper = videoStatisticsMapper;
     }
 
+    /**
+     * 点赞事件消费方法：给视频的点赞数量做变更
+     *
+     * @param videoLikeMessage 点赞消息
+     */
     @RabbitListener(queues = VideoLikeExchange.QUEUE_VIDEO_LIKE_ANALYTICS)
     public void videoLikeListener(String videoLikeMessage) {
         log.info("收到消息：{}", videoLikeMessage);

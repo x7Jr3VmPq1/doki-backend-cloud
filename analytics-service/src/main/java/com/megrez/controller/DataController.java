@@ -1,10 +1,12 @@
 package com.megrez.controller;
 
+import com.megrez.annotation.CurrentUser;
 import com.megrez.entity.UserStatistics;
 import com.megrez.entity.VideoStatistics;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.DataService;
+import com.megrez.vo.VideoStatVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +24,19 @@ public class DataController {
         this.dataService = dataService;
     }
 
+    /**
+     * 查询指定视频的统计信息（点赞/收藏/评论数量）
+     *
+     * @param userId 操作用户ID（不必须）
+     * @param ids    视频ID，传入数组查询:[10001]
+     * @return 统计信息视图对象
+     */
     @PostMapping("/videos")
-    public Result<List<VideoStatistics>> getVideoStatById(@RequestBody List<Integer> ids) {
-        log.info("查询视频统计信息：{}", ids);
-        return dataService.getVideoStatById(ids);
+    public Result<VideoStatVO> getVideoStatById(
+            @CurrentUser(required = false) Integer userId,
+            @RequestBody List<Integer> ids) {
+        log.info("用户：{}查询视频统计信息，视频id：{}", userId, ids);
+        return dataService.getVideoStatById(ids, userId);
     }
 
 

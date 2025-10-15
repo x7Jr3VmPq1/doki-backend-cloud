@@ -1,12 +1,15 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.megrez.client.LikeFavoriteClient;
 import com.megrez.entity.UserStatistics;
 import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.UserStatisticsMapper;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
+import com.megrez.vo.VideoStatVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,10 +17,12 @@ import java.util.List;
 @Service
 public class DataService {
 
+    private final LikeFavoriteClient likeFavoriteClient;
     private final VideoStatisticsMapper videoStatisticsMapper;
     private final UserStatisticsMapper userStatisticsMapper;
 
-    public DataService(VideoStatisticsMapper statisticsMapper, UserStatisticsMapper userStatisticsMapper) {
+    public DataService(LikeFavoriteClient likeFavoriteClient, VideoStatisticsMapper statisticsMapper, UserStatisticsMapper userStatisticsMapper) {
+        this.likeFavoriteClient = likeFavoriteClient;
         this.videoStatisticsMapper = statisticsMapper;
         this.userStatisticsMapper = userStatisticsMapper;
     }
@@ -28,11 +33,22 @@ public class DataService {
      * @param ids 视频ID集合
      * @return 结果集
      */
-    public Result<List<VideoStatistics>> getVideoStatById(List<Integer> ids) {
+    public Result<VideoStatVO> getVideoStatById(List<Integer> ids, Integer userId) {
+        // 查询视频统计信息
         List<VideoStatistics> statisticsList = videoStatisticsMapper.selectList(
                 new LambdaQueryWrapper<VideoStatistics>().in(VideoStatistics::getVideoId, ids)
         );
-        return Result.success(statisticsList);
+        VideoStatVO videoStatVO = new VideoStatVO();
+        BeanUtils.copyProperties(statisticsList.get(0), videoStatVO);
+        // 已登录的请求，判断是否点赞了该视频
+        if (userId > 0) {
+            // 判断该用户是否点赞视频
+            Result<Boolean> result = likeFavoriteClient.existLikeRecord(userId, videoStatVO.getVideoId());
+            if (result.isSuccess()) {
+                videoStatVO.setUserLiked(result.getData());
+            }
+        }
+        return Result.success(videoStatVO);
     }
 
     /**

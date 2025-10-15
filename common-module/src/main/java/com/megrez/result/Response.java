@@ -8,6 +8,7 @@ public enum Response {
     UNAUTHORIZED(401, "未登录或登录已过期"),
     FORBIDDEN(403, "没有相关权限"),
     UNKNOWN_WRONG(444, "未知错误"),
+    PARAMS_WRONG(450, "参数有误"),
     TOO_MANY_REQUEST(410, "请求过于频繁，请稍后再试"),
 
     // 用户服务错误

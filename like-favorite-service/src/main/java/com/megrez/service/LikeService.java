@@ -76,4 +76,21 @@ public class LikeService {
         );
         return Result.success(null);
     }
+
+    /**
+     * 判断用户是否点赞了某个视频
+     *
+     * @param userId  用户ID
+     * @param videoId 视频ID
+     * @return 判断结果
+     */
+    public Result<Boolean> existLikeRecord(Integer userId, Integer videoId) {
+        // 构建查询
+        boolean exists = likeMapper.exists(
+                new LambdaQueryWrapper<VideoLikes>()
+                        .eq(VideoLikes::getUserId, userId)
+                        .eq(VideoLikes::getVideoId, videoId)
+        );
+        return Result.success(exists);
+    }
 }

@@ -1,7 +1,7 @@
 package com.megrez.config;
 
 
-import com.megrez.annotation.CurrentUserArgumentResolver;
+import com.megrez.annotation.resolver.CurrentUserArgumentResolver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
