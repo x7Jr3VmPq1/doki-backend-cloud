@@ -3,7 +3,6 @@ package com.megrez.repository;
 import com.megrez.entity.VideoComments;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.awt.print.Pageable;
 import java.util.List;
 
 public interface CommentRepository extends MongoRepository<VideoComments,String> {

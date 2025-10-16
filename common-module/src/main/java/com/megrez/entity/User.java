@@ -28,7 +28,9 @@ public class User {
     // 个人简介
     private String bio;
     // 注册时间
+    @JsonIgnore
     private long createdAt;
     // 更新时间
+    @JsonIgnore
     private long updatedAt;
 }

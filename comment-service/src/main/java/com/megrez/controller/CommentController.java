@@ -5,13 +5,16 @@ import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.VideoComments;
 import com.megrez.result.Result;
 import com.megrez.service.CommentService;
+import com.megrez.vo.VideoCommentsVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * 评论增删改查接口
+ */
 @RestController
 @RequestMapping("/comment")
 public class CommentController {
@@ -43,6 +46,13 @@ public class CommentController {
     }
 
 
+    /**
+     * 删除评论
+     *
+     * @param userId    用户Id
+     * @param commentId 评论Id
+     * @return 操作结果
+     */
     @DeleteMapping
     public Result<Void> delComment(
             @CurrentUser Integer userId,
@@ -52,12 +62,23 @@ public class CommentController {
         return commentService.delComment(userId, commentId);
     }
 
+    /**
+     * 拉取视频评论，无限滚动加载，按热度排序
+     *
+     * @param userId  用户Id（不必须）
+     * @param videoId 视频Id
+     * @param score   评论得分，作为排序依据(不必须)
+     * @param lastId  上次拉取结果最后一条评论的Id，用于排除重复评论(不必须)
+     * @return 获取的评论集合
+     */
     @GetMapping("/get")
-    public Result<List<VideoComments>> getComments(
+    public Result<List<VideoCommentsVO>> getComments(
             @CurrentUser(required = false) Integer userId,
-            @RequestParam Integer videoId
+            @RequestParam Integer videoId,
+            @RequestParam(required = false) Double score,
+            @RequestParam(required = false) String lastId
     ) {
-        log.info("用户ID：{} 拉取视频ID为：{}的评论", userId, videoId);
-        return commentService.getComments(userId, videoId);
+        log.info("用户ID：{} 拉取视频ID为：{}的评论 score <= {}", userId, videoId, score);
+        return commentService.getComments(userId, videoId, score, lastId);
     }
 }

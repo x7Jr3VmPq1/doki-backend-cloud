@@ -24,8 +24,4 @@ public class JSONUtils {
             throw new RuntimeException("JSON反序列化失败", e);
         }
     }
-
-    public static ObjectMapper getObjectMapper() {
-        return objectMapper;
-    }
 }

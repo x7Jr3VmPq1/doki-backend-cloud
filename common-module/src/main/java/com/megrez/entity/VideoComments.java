@@ -61,5 +61,6 @@ public class VideoComments {
     private double score = 0;   // 热度评分，排序评论的依据
 
     @Builder.Default
+    @JsonIgnore
     private Boolean isDeleted = false;      // 是否删除，默认false
 }
