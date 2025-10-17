@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 评论增删改查接口
@@ -64,21 +66,25 @@ public class CommentController {
 
     /**
      * 拉取视频评论，无限滚动加载，按热度排序
+     * 加载下一页时，必须同时传递score和lastId作为分页依据，否则查询的结果会有误
      *
-     * @param userId  用户Id（不必须）
-     * @param videoId 视频Id
-     * @param score   评论得分，作为排序依据(不必须)
-     * @param lastId  上次拉取结果最后一条评论的Id，用于排除重复评论(不必须)
+     * @param userId          用户Id（不必须）
+     * @param videoId         视频Id
+     * @param score           评论得分，作为排序依据(不必须)
+     * @param lastId          上次拉取结果最后一条评论的Id，用于排除重复评论(不必须)
+     * @param parentCommentId 父评论id（拉取回复列表时使用，不必须）
      * @return 获取的评论集合
      */
     @GetMapping("/get")
-    public Result<List<VideoCommentsVO>> getComments(
+    public Result<Map<String, Object>> getComments(
             @CurrentUser(required = false) Integer userId,
             @RequestParam Integer videoId,
             @RequestParam(required = false) Double score,
-            @RequestParam(required = false) String lastId
+            @RequestParam(required = false) String lastId,
+            @RequestParam(required = false) String parentCommentId
     ) {
         log.info("用户ID：{} 拉取视频ID为：{}的评论 score <= {}", userId, videoId, score);
-        return commentService.getComments(userId, videoId, score, lastId);
+        return commentService.getComments(userId, videoId, score, lastId, parentCommentId);
     }
+
 }

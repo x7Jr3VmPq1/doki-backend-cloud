@@ -33,10 +33,7 @@ public class ActionController {
      * @return 操作结果
      */
     @GetMapping("/like")
-    public Result<Void> like(
-            @CurrentUser Integer userId,
-            @RequestParam String commentId
-    ) {
+    public Result<Void> like(@CurrentUser Integer userId, @RequestParam String commentId) {
         log.info("用户ID：{} 点赞了评论 ID：{}", userId, commentId);
         return actionService.like(userId, commentId);
     }

@@ -36,7 +36,10 @@ public class VideoComments {
     private String content = "";         // 评论内容，默认空字符串
 
     @Builder.Default
-    private Integer parentCommentId = null;   // 父评论ID，默认null
+    private String parentCommentId = null;   // 父评论ID，默认null
+
+    @Builder.Default
+    private String replyTargetId = null; // 回复目标评论ID，默认为null
 
     @Builder.Default
     private Boolean isRoot = true;         // 是否为根评论

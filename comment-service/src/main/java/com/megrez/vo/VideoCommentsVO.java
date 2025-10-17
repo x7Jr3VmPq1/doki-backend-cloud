@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class VideoCommentsVO {
-    VideoComments videoComments; // 评论体
+    VideoComments comments; // 评论体
     User user; // 用户信息
     Boolean liked; // 是否点赞
 }
