@@ -24,6 +24,11 @@ spring:
             lb://audit-service
           predicates:
             - Path=/audit/**
+        - id: video-info-service # 视频信息服务
+          uri:
+            lb://video-info-service
+          predicates:
+            - Path=/video/info/**
         - id: video-upload-service # 视频上传服务
           uri:
             lb://video-upload-service
@@ -34,7 +39,7 @@ spring:
             lb://video-play-service
           predicates:
             - Path=/video/play/**
-        - id: video-processing-service # 视频转码服务
+        - id: video-processing-service # 视频转码/信息服务
           uri:
             lb://video-processing-service
           predicates:

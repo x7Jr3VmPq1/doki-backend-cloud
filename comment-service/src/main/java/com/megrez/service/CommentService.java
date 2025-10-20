@@ -3,9 +3,14 @@ package com.megrez.service;
 import com.megrez.client.UserServiceClient;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.*;
+import com.megrez.rabbit.dto.CommentAddMessage;
+import com.megrez.rabbit.exchange.CommentAddExchange;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
+import com.megrez.utils.JSONUtils;
+import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.VideoCommentsVO;
+import org.bouncycastle.cms.PasswordRecipient;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +18,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -25,19 +32,40 @@ public class CommentService {
     private static final Logger log = LoggerFactory.getLogger(CommentService.class);
     private final MongoTemplate mongoTemplate;
     private final UserServiceClient userServiceClient;
+    private final RabbitMQUtils rabbitMQUtils;
 
-    public CommentService(MongoTemplate mongoTemplate, UserServiceClient userServiceClient) {
+    public CommentService(MongoTemplate mongoTemplate, UserServiceClient userServiceClient, RabbitMQUtils rabbitMQUtils) {
         this.mongoTemplate = mongoTemplate;
         this.userServiceClient = userServiceClient;
+        this.rabbitMQUtils = rabbitMQUtils;
     }
 
     public Result<VideoComments> addComment(Integer userId, VideoCommentDTO videoComment) {
         // 构建文档
-        VideoComments comment = VideoComments.builder().userId(userId).videoId(videoComment.getVideoId()).parentCommentId(videoComment.getParentCommentId()).replyTargetId(videoComment.getReplyTargetId()).isRoot(videoComment.getParentCommentId() == null) // 没有传递父级评论ID，说明是根评论
+        VideoComments comment = VideoComments.builder()
+                .userId(userId)
+                .videoId(videoComment.getVideoId())
+                .parentCommentId(videoComment.getParentCommentId())
+                .replyTargetId(videoComment.getReplyTargetId())
+                .isRoot(videoComment.getParentCommentId() == null) // 没有传递父级评论ID，说明是根评论
                 .content(videoComment.getContent()).build();
         // 插入
         VideoComments inserted = mongoTemplate.insert(comment);
 
+        // 如果是回复，则给被回复的根评论的回复总数 + 1。
+        if (!inserted.getIsRoot()) {
+            Query query = new Query(Criteria.where("_id").is(inserted.getParentCommentId()));
+            Update update = new Update().inc("childCount", 1);
+            mongoTemplate.updateFirst(query, update, VideoComments.class);
+        }
+
+        // 发送消息
+        CommentAddMessage commentAddMessage = new CommentAddMessage();
+        commentAddMessage.setVideoComments(comment);
+        rabbitMQUtils.sendMessage(
+                CommentAddExchange.FANOUT_EXCHANGE_COMMENT_ADD,
+                "",
+                JSONUtils.toJSON(commentAddMessage));
         // 返回插入的文档
         return Result.success(inserted);
     }
@@ -56,6 +84,12 @@ public class CommentService {
         // 4. 有权限，执行删除
         mongoTemplate.remove(byId);
 
+        // 5. 如果这是一条子回复，更新父评论的回复数量
+        if (!byId.getParentCommentId().isEmpty()) {
+            Query query = new Query(Criteria.where("_id").is(byId.getParentCommentId()));
+            Update update = new Update().inc("childCount", -1);
+            mongoTemplate.updateFirst(query, update, VideoComments.class);
+        }
         return Result.success(null);
     }
 
@@ -152,12 +186,21 @@ public class CommentService {
 
         // 热度条件
         // 默认1
-        query.addCriteria(Criteria.where("score").lte(Objects.requireNonNullElse(score, 1.0)));
+        Criteria c1 = Criteria.where("score").lt(Objects.requireNonNullElse(score, 1.0));
 
-        // 排除指定评论ID（分页用）
+        Criteria c2 = null;
         if (lasCommentId != null && !lasCommentId.isEmpty()) {
-            query.addCriteria(Criteria.where("_id").gt(new ObjectId(lasCommentId)));
+            c2 = Criteria.where("_id").gt(new ObjectId(lasCommentId))
+                    .and("score").is(score);
         }
+
+        // 构造 OR 条件
+        if (c2 != null) {
+            query.addCriteria(new Criteria().orOperator(c1, c2));
+        } else {
+            query.addCriteria(c1);
+        }
+
 
         // 排序：先按热度，再按时间升序
         query.with(Sort.by(Sort.Order.desc("score"), Sort.Order.asc("_id"))).limit(limit);

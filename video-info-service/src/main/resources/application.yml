@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: video-info-service  # 应用名
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 30222 # 端口号
+

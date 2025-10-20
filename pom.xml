@@ -39,6 +39,7 @@
         <module>notification-dm-service</module>
         <module>search-service</module>
         <module>analytics-service</module>
+        <module>video-info-service</module>
     </modules>
 
     <properties>

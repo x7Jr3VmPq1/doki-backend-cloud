@@ -2,11 +2,13 @@ package com.megrez.service;
 
 import com.megrez.entity.CommentLike;
 import com.megrez.entity.VideoComments;
+import com.megrez.entity.VideoLikes;
 import com.megrez.rabbit.dto.CommentLikeMessage;
 import com.megrez.rabbit.exchange.CommentLikeExchange;
 import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
+import com.mongodb.client.MongoClient;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -18,10 +20,12 @@ public class ActionService {
 
     private final MongoTemplate mongoTemplate;
     private final RabbitMQUtils rabbitMQUtils;
+    private final MongoClient mongo;
 
-    public ActionService(MongoTemplate mongoTemplate, RabbitMQUtils rabbitMQUtils) {
+    public ActionService(MongoTemplate mongoTemplate, RabbitMQUtils rabbitMQUtils, MongoClient mongo) {
         this.mongoTemplate = mongoTemplate;
         this.rabbitMQUtils = rabbitMQUtils;
+        this.mongo = mongo;
     }
 
     public Result<Void> like(Integer userId, String commentId) {
@@ -53,8 +57,12 @@ public class ActionService {
                 );
                 type = 1;
             }
+            // 4. 更新点赞数
+            Query query1 = new Query(Criteria.where("_id").is(commentId));
+            Update update = new Update().inc("likeCount", type == 1 ? 1 : -1);
+            mongoTemplate.updateFirst(query1, update, VideoComments.class);
 
-            // 4. 发送消息
+            // 5. 发送消息
             rabbitMQUtils.sendMessage(
                     CommentLikeExchange.FANOUT_EXCHANGE_COMMENT_LIKE,
                     null,
