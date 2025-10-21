@@ -4,13 +4,15 @@ import com.megrez.client.UserServiceClient;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.*;
 import com.megrez.rabbit.dto.CommentAddMessage;
+import com.megrez.rabbit.dto.CommentDelMessage;
 import com.megrez.rabbit.exchange.CommentAddExchange;
+import com.megrez.rabbit.exchange.CommentDeleteExchange;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.VideoCommentsVO;
-import org.bouncycastle.cms.PasswordRecipient;
+import com.mongodb.client.result.UpdateResult;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,6 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,9 +55,7 @@ public class CommentService {
 
         // 如果是回复，则给被回复的根评论的回复总数 + 1。
         if (!inserted.getIsRoot()) {
-            Query query = new Query(Criteria.where("_id").is(inserted.getParentCommentId()));
-            Update update = new Update().inc("childCount", 1);
-            mongoTemplate.updateFirst(query, update, VideoComments.class);
+            updateRootRepliesCount(inserted, 1);
         }
 
         // 发送消息
@@ -82,16 +81,36 @@ public class CommentService {
             return Result.error(Response.FORBIDDEN);
         }
         // 4. 有权限，执行删除
-        mongoTemplate.remove(byId);
+        Query query = new Query(Criteria.where("_id").is(commentId).and("userId").is(userId));
+        Update update = new Update().set("isDeleted", true);
+
+        mongoTemplate.updateFirst(query, update, VideoComments.class);
 
         // 5. 如果这是一条子回复，更新父评论的回复数量
-        if (!byId.getParentCommentId().isEmpty()) {
-            Query query = new Query(Criteria.where("_id").is(byId.getParentCommentId()));
-            Update update = new Update().inc("childCount", -1);
-            mongoTemplate.updateFirst(query, update, VideoComments.class);
+        if (byId.getParentCommentId() != null) {
+            updateRootRepliesCount(byId, -1);
         }
+
+        // 6. 发送消息
+        CommentAddMessage commentAddMessage = new CommentAddMessage();
+        commentAddMessage.setVideoComments(byId);
+        rabbitMQUtils.sendMessage(
+                CommentDeleteExchange.FANOUT_EXCHANGE_COMMENT_DELETE,
+                "",
+                JSONUtils.toJSON(commentAddMessage));
         return Result.success(null);
     }
+
+
+    /**
+     * 辅助方法：增加或减少根评论的回复数量
+     */
+    private void updateRootRepliesCount(VideoComments comments, int delta) {
+        Query query = new Query(Criteria.where("_id").is(comments.getParentCommentId()));
+        Update update = new Update().inc("childCount", delta);
+        mongoTemplate.updateFirst(query, update, VideoComments.class);
+    }
+
 
     /**
      * 获取评论
