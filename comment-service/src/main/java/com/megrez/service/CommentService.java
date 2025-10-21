@@ -4,7 +4,6 @@ import com.megrez.client.UserServiceClient;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.*;
 import com.megrez.rabbit.dto.CommentAddMessage;
-import com.megrez.rabbit.dto.CommentDelMessage;
 import com.megrez.rabbit.exchange.CommentAddExchange;
 import com.megrez.rabbit.exchange.CommentDeleteExchange;
 import com.megrez.result.Response;
@@ -12,7 +11,6 @@ import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.VideoCommentsVO;
-import com.mongodb.client.result.UpdateResult;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,19 +123,17 @@ public class CommentService {
     public Result<Map<String, Object>> getComments(Integer userId, Integer videoId, Double score, String lastCommentId, String parentCommentId) {
 
         // 1. 构建查询返回基础评论，如果传入了父评论id，则说明是拉取回复，否则拉取根评论
-        int limit; // 如果是拉取根评论，每次拉取10条，如果是回复，每次拉取2条
-        if (parentCommentId == null) {
-            limit = 10;
-        } else {
-            limit = 2;
-        }
+        int limit = (parentCommentId == null) ? 10 : 2; // 如果是拉取根评论，每次拉取10条，如果是回复，每次拉取2条
         // 执行查询
         List<VideoComments> comments = parentCommentId == null ?
                 findRootComment(videoId, score, lastCommentId, limit + 1) :
                 findReplyComment(videoId, parentCommentId, lastCommentId, limit + 1);
-        // 没有查询到任何评论，返回空
+        // 没有查询到任何评论，返回空集合
         if (comments.isEmpty()) {
-            return Result.success(null);
+            HashMap<String, Object> list = new HashMap<>();
+            list.put("hasMore", false);
+            list.put("list", List.of());
+            return Result.success(list);
         }
         boolean hasMore = false;    // 是否还有更多评论标记
         if (comments.size() > limit) {
@@ -173,14 +169,15 @@ public class CommentService {
 
         // 构建 VO List 组装数据
         List<VideoCommentsVO> list = comments.stream().map(c -> {
-            VideoCommentsVO videoCommentsVO = new VideoCommentsVO();
-            videoCommentsVO.setComments(c);
+            VideoCommentsVO vo = new VideoCommentsVO();
+            vo.setComments(c);
             // 判断是否点赞
-            videoCommentsVO.setLiked(likedCommentsMap.get(c.getId()) != null);
+            vo.setLiked(likedCommentsMap.get(c.getId()) != null);
             // 设置评论对应用户信息
-            videoCommentsVO.setUser(userMap.get(c.getUserId()));
-            return videoCommentsVO;
+            vo.setUser(userMap.get(c.getUserId()));
+            return vo;
         }).toList();
+        // 构建最终结果并返回
         HashMap<String, Object> map = new HashMap<>();
         map.put("list", list); // 评论数据
         map.put("hasMore", hasMore); // 是否还有更多标记
