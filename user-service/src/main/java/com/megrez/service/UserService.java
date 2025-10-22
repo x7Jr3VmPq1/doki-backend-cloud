@@ -1,6 +1,7 @@
 package com.megrez.service;
 
 import com.megrez.client.ImageServiceClient;
+import com.megrez.constant.GatewayHttpPath;
 import com.megrez.entity.User;
 import com.megrez.mapper.UserMapper;
 import com.megrez.result.Response;
@@ -107,6 +108,8 @@ public class UserService {
      */
     public Result<List<User>> getById(List<Integer> userId) {
         List<User> users = userMapper.selectBatchIds(userId);
+        // 拼接头像地址
+        users.forEach(e -> e.setAvatarUrl(GatewayHttpPath.AVATAR + e.getAvatarUrl()));
         return Result.success(users);
     }
 
@@ -124,6 +127,9 @@ public class UserService {
         }
         Integer id = (Integer) claims.get("id");
         // 2. 查询用户信息
-        return Result.success(userMapper.selectById(id));
+        User user = userMapper.selectById(id);
+        // 拼接头像地址
+        user.setAvatarUrl(GatewayHttpPath.AVATAR + user.getAvatarUrl());
+        return Result.success(user);
     }
 }

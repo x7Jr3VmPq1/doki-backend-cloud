@@ -35,4 +35,14 @@ public interface ImageServiceClient {
      */
     @PostMapping("/image/cover/upload")
     Result<String> uploadCover(@RequestBody Map<String, String> base64);
+
+
+    /**
+     * 上传评论图片服务
+     *
+     * @param base64 封面图BASE64字符串
+     * @return 文件名
+     */
+    @PostMapping("/image/comment/upload")
+    Result<String> uploadCommentImg(@RequestBody Map<String, String> base64);
 }

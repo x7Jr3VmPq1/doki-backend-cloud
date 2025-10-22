@@ -28,10 +28,9 @@ public class ImageController {
     // 上传图片
     @PostMapping("/{type}/upload")
     public Result<String> upload(@RequestBody Map<String, String> base64,
-                         @PathVariable String type) throws Exception {
-        log.info("上传图片类型：{}", type);
+                                 @PathVariable String type) throws Exception {
         if (!FileUtils.isBase64(base64.get("base64"))) {
-            log.info("错误的BASE64参数");
+            log.error("上传失败，错误的BASE64参数");
             return Result.error(Response.IMAGE_UPLOAD_DECODE_WRONG);
         }
 
@@ -39,14 +38,15 @@ public class ImageController {
             String filename = imageService.saveImage(base64.get("base64"), ImageType.fromString(type));
             return Result.success(filename);
         } catch (Exception e) {
+            log.error("保存文件失败：{}", e.getMessage());
             return Result.error(Response.IMAGE_UPLOAD_SAVE_WRONG);
         }
     }
 
     // 获取图片
     @GetMapping("/{type}/{filename}")
-    public ResponseEntity<byte[]> getImage(@PathVariable String filename,
-                                           @PathVariable String type) throws Exception {
+    public ResponseEntity<byte[]> getImage(@PathVariable("filename") String filename,
+                                           @PathVariable("type") String type) throws Exception {
         byte[] image = imageService.getImage(filename, ImageType.fromString(type));
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG)

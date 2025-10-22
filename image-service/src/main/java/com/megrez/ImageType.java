@@ -1,7 +1,7 @@
 package com.megrez;
 
 public enum ImageType {
-    USER_AVATAR("avatar"), VIDEO_COVER("cover");
+    USER_AVATAR("avatar"), VIDEO_COVER("cover"),COMMENT_IMG("comment");
 
     private final String dir;
 

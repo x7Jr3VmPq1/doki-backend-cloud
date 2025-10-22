@@ -13,7 +13,7 @@ spring:
           uri:
             lb://user-service
           predicates:
-            - Path=/user/**
+            - Path=/user/**,/auth/**
         - id: image-service # 图片服务
           uri:
             lb://image-service

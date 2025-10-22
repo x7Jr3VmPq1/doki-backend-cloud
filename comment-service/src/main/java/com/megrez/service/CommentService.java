@@ -1,8 +1,11 @@
 package com.megrez.service;
 
+import com.megrez.client.ImageServiceClient;
 import com.megrez.client.UserServiceClient;
+import com.megrez.constant.GatewayHttpPath;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.*;
+import com.megrez.path.FilesServerPath;
 import com.megrez.rabbit.dto.CommentAddMessage;
 import com.megrez.rabbit.exchange.CommentAddExchange;
 import com.megrez.rabbit.exchange.CommentDeleteExchange;
@@ -31,23 +34,44 @@ public class CommentService {
     private static final Logger log = LoggerFactory.getLogger(CommentService.class);
     private final MongoTemplate mongoTemplate;
     private final UserServiceClient userServiceClient;
+    private final ImageServiceClient imageServiceClient;
     private final RabbitMQUtils rabbitMQUtils;
 
-    public CommentService(MongoTemplate mongoTemplate, UserServiceClient userServiceClient, RabbitMQUtils rabbitMQUtils) {
+    public CommentService(MongoTemplate mongoTemplate, UserServiceClient userServiceClient, ImageServiceClient imageServiceClient, RabbitMQUtils rabbitMQUtils) {
         this.mongoTemplate = mongoTemplate;
         this.userServiceClient = userServiceClient;
+        this.imageServiceClient = imageServiceClient;
         this.rabbitMQUtils = rabbitMQUtils;
     }
 
     public Result<VideoComments> addComment(Integer userId, VideoCommentDTO videoComment) {
+        // TODO 这里缺少校验视频id合法性的逻辑，需要一个优雅的解决方案，总是调视频服务不科学！
         // 构建文档
+
+        // 获取评论中可能存在的图片并上传至文件服务器
+        String imgName = null;
+        if (videoComment.getImage() != null && !videoComment.getImage().isEmpty()) {
+            HashMap<String, String> map = new HashMap<>();
+            map.put("base64", videoComment.getImage());
+            try {
+                Result<String> result = imageServiceClient.uploadCommentImg(map);
+                if (result.isSuccess()) {
+                    log.info("图片服务调用成功");
+                    imgName = result.getData();
+                }
+            } catch (Exception e) {
+                log.info("图片服务调用失败：{}", e.getMessage());
+            }
+        }
         VideoComments comment = VideoComments.builder()
                 .userId(userId)
                 .videoId(videoComment.getVideoId())
                 .parentCommentId(videoComment.getParentCommentId())
                 .replyTargetId(videoComment.getReplyTargetId())
                 .isRoot(videoComment.getParentCommentId() == null) // 没有传递父级评论ID，说明是根评论
-                .content(videoComment.getContent()).build();
+                .content(videoComment.getContent())
+                .imgUrl(imgName)
+                .build();
         // 插入
         VideoComments inserted = mongoTemplate.insert(comment);
 
@@ -64,6 +88,8 @@ public class CommentService {
                 "",
                 JSONUtils.toJSON(commentAddMessage));
         // 返回插入的文档
+        // 转化一下评论图片的地址，以便前端显示
+        inserted.setImgUrl(GatewayHttpPath.COMMENT_IMG + imgName);
         return Result.success(inserted);
     }
 
@@ -170,10 +196,14 @@ public class CommentService {
         // 构建 VO List 组装数据
         List<VideoCommentsVO> list = comments.stream().map(c -> {
             VideoCommentsVO vo = new VideoCommentsVO();
+            // 把文件名转为URL
+            if (c.getImgUrl() != null && !c.getImgUrl().isEmpty()) {
+                c.setImgUrl(GatewayHttpPath.COMMENT_IMG + c.getImgUrl());
+            }
             vo.setComments(c);
             // 判断是否点赞
             vo.setLiked(likedCommentsMap.get(c.getId()) != null);
-            // 设置评论对应用户信息
+            // 获取原始用户信息
             vo.setUser(userMap.get(c.getUserId()));
             return vo;
         }).toList();
@@ -216,8 +246,6 @@ public class CommentService {
         } else {
             query.addCriteria(c1);
         }
-
-
         // 排序：先按热度，再按时间升序
         query.with(Sort.by(Sort.Order.desc("score"), Sort.Order.asc("_id"))).limit(limit);
 

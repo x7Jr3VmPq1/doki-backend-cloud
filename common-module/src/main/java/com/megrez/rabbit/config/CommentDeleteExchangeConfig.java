@@ -24,11 +24,24 @@ public class CommentDeleteExchangeConfig {
         return new Queue(CommentDeleteExchange.QUEUE_COMMENT_DELETE_ANALYTICS, true);
     }
 
+    // 定义评论删除图片队列
+    @Bean(CommentDeleteExchange.QUEUE_COMMENT_DELETE_IMAGE)
+    public Queue commentDeleteImageQueue() {
+        return new Queue(CommentDeleteExchange.QUEUE_COMMENT_DELETE_IMAGE);
+    }
 
     // 绑定统计队列到交换机
     @Bean
     public Binding bindingCommentDeleteAnalyticsQueueToExchange(
             @Qualifier(CommentDeleteExchange.QUEUE_COMMENT_DELETE_ANALYTICS) Queue queue,
+            @Qualifier(CommentDeleteExchange.FANOUT_EXCHANGE_COMMENT_DELETE) FanoutExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange);
+    }
+
+    // 绑定图片服务队列到交换机
+    @Bean
+    public Binding bindingCommentDeleteImageQueueToExchange(
+            @Qualifier(CommentDeleteExchange.QUEUE_COMMENT_DELETE_IMAGE) Queue queue,
             @Qualifier(CommentDeleteExchange.FANOUT_EXCHANGE_COMMENT_DELETE) FanoutExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange);
     }

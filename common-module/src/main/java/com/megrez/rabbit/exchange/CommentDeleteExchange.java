@@ -10,4 +10,7 @@ public class CommentDeleteExchange {
 
     // 评论删除统计队列
     public static final String QUEUE_COMMENT_DELETE_ANALYTICS = "comment.delete.analytics.queue";
+
+    // 评论删除图片服务队列
+    public static final String QUEUE_COMMENT_DELETE_IMAGE = "comment.delete.image.queue";
 }
