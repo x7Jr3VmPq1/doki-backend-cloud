@@ -34,7 +34,11 @@ public enum Response {
     VIDEO_NOT_UPLOAD(30100, "请先上传视频"),
 
     // 社交关系服务错误
-    SOCIAL_FORBID_REPEAT_FOLLOW(40001, "禁止重复关注");
+    SOCIAL_FORBID_REPEAT_FOLLOW(40001, "禁止重复关注"),
+
+    // 评论服务错误
+    COMMENT_NOT_EMPTY(50000, "评论不能为空"),
+    COMMENT_TOO_LONG(50001, "评论太长啦");
 
     private final int code;
     private final String message;

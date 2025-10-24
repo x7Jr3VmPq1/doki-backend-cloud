@@ -1,21 +1,19 @@
 package com.megrez.utils;
 
-import com.megrez.dto.comment_service.NextOffset;
-
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-// 用来加密分页参数的工具类
+// 加密对象的通用工具类
 public class PageTokenUtils {
 
     // 密钥
     private static final String AES_KEY = "1234567890abcdef";
 
     // 加密
-    public static String encryptState(NextOffset state) throws Exception {
+    public static <T> String encryptState(T state) throws Exception {
         String json = JSONUtils.toJSON(state);
         byte[] keyBytes = AES_KEY.getBytes();
         SecretKey key = new SecretKeySpec(keyBytes, "AES");
@@ -28,7 +26,7 @@ public class PageTokenUtils {
     }
 
     // 解密
-    public static NextOffset decryptState(String token) throws Exception {
+    public static <T> T decryptState(String token, Class<T> clazz) throws Exception {
         byte[] encryptedBytes = Base64.getUrlDecoder().decode(token);
         SecretKey key = new SecretKeySpec(AES_KEY.getBytes(), "AES");
 
@@ -36,7 +34,7 @@ public class PageTokenUtils {
         cipher.init(Cipher.DECRYPT_MODE, key);
         byte[] decrypted = cipher.doFinal(encryptedBytes);
 
-        return JSONUtils.fromJSON(new String(decrypted, StandardCharsets.UTF_8), NextOffset.class);
+        return JSONUtils.fromJSON(new String(decrypted, StandardCharsets.UTF_8), clazz);
 
     }
 }

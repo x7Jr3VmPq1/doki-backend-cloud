@@ -16,7 +16,6 @@ import com.megrez.utils.PageTokenUtils;
 import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.comment_service.CursorLoadVO;
 import com.megrez.vo.comment_service.VideoCommentsVO;
-import com.megrez.vo.user_service.UsersVO;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +48,15 @@ public class CommentService {
     }
 
     public Result<VideoComments> addComment(Integer userId, VideoCommentDTO videoComment) {
+        // 不能发空评论。
+        if (videoComment.getContent() == null) {
+            return Result.error(Response.COMMENT_NOT_EMPTY);
+        }
+        // 校验评论内容长度，不能超过200个字符。
+        if (videoComment.getContent().length() > 200) {
+            return Result.error(Response.COMMENT_TOO_LONG);
+        }
+
         // TODO 这里缺少校验视频id合法性的逻辑，需要一个优雅的解决方案，总是调视频服务不科学！
         // 构建文档
 
@@ -60,7 +68,6 @@ public class CommentService {
             try {
                 Result<String> result = imageServiceClient.uploadCommentImg(map);
                 if (result.isSuccess()) {
-                    log.info("图片服务调用成功");
                     imgName = result.getData();
                 }
             } catch (Exception e) {
@@ -146,7 +153,7 @@ public class CommentService {
         NextOffset nextOffset = new NextOffset();
         if (nextOffsetCoded != null) {
             try {
-                nextOffset = PageTokenUtils.decryptState(nextOffsetCoded);
+                nextOffset = PageTokenUtils.decryptState(nextOffsetCoded, NextOffset.class);
             } catch (Exception e) {
                 log.error("解析游标参数失败！", e);
                 return Result.error(Response.PARAMS_WRONG);

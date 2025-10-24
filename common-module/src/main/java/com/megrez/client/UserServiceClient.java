@@ -17,7 +17,7 @@ import java.util.List;
  * @author Doki Team
  * @since 1.0.0
  */
-@FeignClient(name = "user-service")
+@FeignClient(name = "user-service", path = "/user")
 public interface UserServiceClient {
 
     /**
@@ -26,6 +26,6 @@ public interface UserServiceClient {
      * @param userIds 用户ID列表
      * @return 用户信息结果
      */
-    @PostMapping("/user/userinfo")
+    @PostMapping("/userinfo")
     Result<List<User>> getUserinfoById(@RequestBody List<Integer> userIds);
 }

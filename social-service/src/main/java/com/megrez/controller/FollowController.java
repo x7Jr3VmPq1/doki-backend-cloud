@@ -40,6 +40,21 @@ public class FollowController {
     }
 
     /**
+     * 取关操作。
+     *
+     * @param userId    用户id。
+     * @param targetUid 目标id。
+     * @return 操作结果
+     */
+    @GetMapping("/unFollow")
+    public Result<Void> unFollow(@CurrentUser Integer userId,
+                                 @RequestParam("tid") Integer targetUid) {
+        log.info("用户ID: {} 取消关注用户ID:{}", userId, targetUid);
+
+        return Result.success(null);
+    }
+
+    /**
      * 批量查询当前用户是否对目标用户有关注关系。
      * 提供一个ID列表，如果存在对这些用户的关注，则把关注的信息返回。
      *
