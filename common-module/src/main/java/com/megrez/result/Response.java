@@ -1,5 +1,8 @@
 package com.megrez.result;
 
+import lombok.Getter;
+
+@Getter
 public enum Response {
     // 通用状态码
     SUCCESS(200, "操作成功"),
@@ -28,21 +31,17 @@ public enum Response {
     VIDEO_UPLOAD_REPEAT_DRAFT(30003, "已经存在一个草稿了!"),
     VIDEO_UPLOAD_UPDATE_DRAFT_WRONG(30003, "修改草稿失败"),
     VIDEO_DRAFT_NOT_FOUND(30004, "不存在的草稿"),
-    VIDEO_NOT_UPLOAD(30100, "请先上传视频");
+    VIDEO_NOT_UPLOAD(30100, "请先上传视频"),
+
+    // 社交关系服务错误
+    SOCIAL_FORBID_REPEAT_FOLLOW(40001, "禁止重复关注");
+
     private final int code;
     private final String message;
 
     Response(int code, String message) {
         this.code = code;
         this.message = message;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
 }

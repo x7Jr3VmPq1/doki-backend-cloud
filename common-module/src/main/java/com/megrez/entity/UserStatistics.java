@@ -17,6 +17,7 @@ public class UserStatistics {
     private Integer userId;
     private Integer followingCount;
     private Integer followerCount;
+    private Integer likeCount;
     private long createdAt;
     private long updatedAt;
 }

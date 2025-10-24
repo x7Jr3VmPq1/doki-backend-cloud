@@ -61,6 +61,7 @@ public class VideoComments {
     private String imgUrl = "";          // 图片URL，默认空字符串
 
     @Builder.Default
+    @JsonIgnore
     private double score = 0;   // 热度评分，排序评论的依据
 
     @Builder.Default

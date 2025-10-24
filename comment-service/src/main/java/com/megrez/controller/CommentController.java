@@ -3,9 +3,12 @@ package com.megrez.controller;
 import com.megrez.annotation.CurrentUser;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.VideoComments;
+import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.CommentService;
+import com.megrez.vo.CursorLoadVO;
 import com.megrez.vo.VideoCommentsVO;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -66,25 +69,26 @@ public class CommentController {
 
     /**
      * 拉取视频评论，无限滚动加载，按热度排序
-     * 加载下一页时，必须同时传递score和lastId作为分页依据，否则查询的结果会有误
      *
      * @param userId          用户Id（不必须）
      * @param videoId         视频Id
-     * @param score           评论得分，作为排序依据(不必须)
-     * @param lastId          上次拉取结果最后一条评论的Id，用于排除重复评论(不必须)
      * @param parentCommentId 父评论id（拉取回复列表时使用，不必须）
+     * @param cursor          加密游标
      * @return 获取的评论集合
      */
     @GetMapping("/get")
-    public Result<Map<String, Object>> getComments(
+    public Result<CursorLoadVO> getComments(
             @CurrentUser(required = false) Integer userId,
             @RequestParam Integer videoId,
-            @RequestParam(required = false) Double score,
-            @RequestParam(required = false) String lastId,
+            @RequestParam(required = false) String cursor,
             @RequestParam(required = false) String parentCommentId
     ) {
-        log.info("用户ID：{} 拉取视频ID为：{}的评论 score <= {}", userId, videoId, score);
-        return commentService.getComments(userId, videoId, score, lastId, parentCommentId);
+        // 未登录用户只能查看前十条根评论
+        if (userId == -1 && (cursor != null || parentCommentId != null)) {
+            return Result.error(Response.UNAUTHORIZED);
+        }
+        log.info("用户ID：{} 拉取视频ID为：{}的评论", userId, videoId);
+        return commentService.getComments(userId, videoId, cursor, parentCommentId);
     }
 
 }

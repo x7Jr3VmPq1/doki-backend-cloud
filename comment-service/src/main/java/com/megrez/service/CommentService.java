@@ -3,6 +3,7 @@ package com.megrez.service;
 import com.megrez.client.ImageServiceClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.constant.GatewayHttpPath;
+import com.megrez.dto.NextOffset;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.*;
 import com.megrez.path.FilesServerPath;
@@ -12,7 +13,9 @@ import com.megrez.rabbit.exchange.CommentDeleteExchange;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
+import com.megrez.utils.PageTokenUtils;
 import com.megrez.utils.RabbitMQUtils;
+import com.megrez.vo.CursorLoadVO;
 import com.megrez.vo.VideoCommentsVO;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -25,6 +28,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -63,15 +67,8 @@ public class CommentService {
                 log.info("图片服务调用失败：{}", e.getMessage());
             }
         }
-        VideoComments comment = VideoComments.builder()
-                .userId(userId)
-                .videoId(videoComment.getVideoId())
-                .parentCommentId(videoComment.getParentCommentId())
-                .replyTargetId(videoComment.getReplyTargetId())
-                .isRoot(videoComment.getParentCommentId() == null) // 没有传递父级评论ID，说明是根评论
-                .content(videoComment.getContent())
-                .imgUrl(imgName)
-                .build();
+        VideoComments comment = VideoComments.builder().userId(userId).videoId(videoComment.getVideoId()).parentCommentId(videoComment.getParentCommentId()).replyTargetId(videoComment.getReplyTargetId()).isRoot(videoComment.getParentCommentId() == null) // 没有传递父级评论ID，说明是根评论
+                .content(videoComment.getContent()).imgUrl(imgName).build();
         // 插入
         VideoComments inserted = mongoTemplate.insert(comment);
 
@@ -83,13 +80,10 @@ public class CommentService {
         // 发送消息
         CommentAddMessage commentAddMessage = new CommentAddMessage();
         commentAddMessage.setVideoComments(comment);
-        rabbitMQUtils.sendMessage(
-                CommentAddExchange.FANOUT_EXCHANGE_COMMENT_ADD,
-                "",
-                JSONUtils.toJSON(commentAddMessage));
+        rabbitMQUtils.sendMessage(CommentAddExchange.FANOUT_EXCHANGE_COMMENT_ADD, "", JSONUtils.toJSON(commentAddMessage));
         // 返回插入的文档
         // 转化一下评论图片的地址，以便前端显示
-        inserted.setImgUrl(GatewayHttpPath.COMMENT_IMG + imgName);
+        inserted.setImgUrl(imgName != null ? GatewayHttpPath.COMMENT_IMG + imgName : null);
         return Result.success(inserted);
     }
 
@@ -118,10 +112,7 @@ public class CommentService {
         // 6. 发送消息
         CommentAddMessage commentAddMessage = new CommentAddMessage();
         commentAddMessage.setVideoComments(byId);
-        rabbitMQUtils.sendMessage(
-                CommentDeleteExchange.FANOUT_EXCHANGE_COMMENT_DELETE,
-                "",
-                JSONUtils.toJSON(commentAddMessage));
+        rabbitMQUtils.sendMessage(CommentDeleteExchange.FANOUT_EXCHANGE_COMMENT_DELETE, "", JSONUtils.toJSON(commentAddMessage));
         return Result.success(null);
     }
 
@@ -141,37 +132,71 @@ public class CommentService {
      *
      * @param userId          用户id
      * @param videoId         视频id
-     * @param score           热度
-     * @param lastCommentId   上次加载的最后一条评论id
+     * @param nextOffsetCoded 加密后的游标
      * @param parentCommentId 父评论id
      * @return 评论列表
      */
-    public Result<Map<String, Object>> getComments(Integer userId, Integer videoId, Double score, String lastCommentId, String parentCommentId) {
+    public Result<CursorLoadVO> getComments(Integer userId, Integer videoId, String nextOffsetCoded, String parentCommentId) {
 
+        // 未登录用户，禁止获取回复
+        if (userId == -1 && parentCommentId != null) {
+            return Result.error(Response.UNAUTHORIZED);
+        }
+        // 解码游标，以获取参数
+        NextOffset nextOffset = new NextOffset();
+        if (nextOffsetCoded != null) {
+            try {
+                nextOffset = PageTokenUtils.decryptState(nextOffsetCoded);
+            } catch (Exception e) {
+                log.error("解析游标参数失败！", e);
+                return Result.error(Response.PARAMS_WRONG);
+            }
+            // 判断传入参数与游标中写入参数的一致性
+            if (videoId != null && parentCommentId != null) {
+                if (!(videoId.equals(nextOffset.getVideoId()) && userId.equals(nextOffset.getUserId()) && parentCommentId.equals(nextOffset.getParentCommentId()))) {
+                    return Result.error(Response.PARAMS_WRONG);
+                }
+            }
+            // 判断游标是否过期
+            long difference = System.currentTimeMillis() - nextOffset.getTimestamp();
+            if (difference > TimeUnit.DAYS.toMillis(1)) {
+                return Result.error(Response.PARAMS_WRONG);
+            }
+        }
         // 1. 构建查询返回基础评论，如果传入了父评论id，则说明是拉取回复，否则拉取根评论
         int limit = (parentCommentId == null) ? 10 : 2; // 如果是拉取根评论，每次拉取10条，如果是回复，每次拉取2条
         // 执行查询
-        List<VideoComments> comments = parentCommentId == null ?
-                findRootComment(videoId, score, lastCommentId, limit + 1) :
-                findReplyComment(videoId, parentCommentId, lastCommentId, limit + 1);
+        List<VideoComments> comments = parentCommentId == null ? findRootComment(videoId, nextOffset.getScore(), nextOffset.getLastCommentId(), limit + 1) : findReplyComment(videoId, parentCommentId, nextOffset.getLastCommentId(), limit + 1);
         // 没有查询到任何评论，返回空集合
         if (comments.isEmpty()) {
-            HashMap<String, Object> list = new HashMap<>();
-            list.put("hasMore", false);
-            list.put("list", List.of());
-            return Result.success(list);
+            CursorLoadVO emptyResult = CursorLoadVO.builder().build();
+            return Result.success(emptyResult);
         }
         boolean hasMore = false;    // 是否还有更多评论标记
         if (comments.size() > limit) {
             hasMore = true;
             comments = comments.subList(0, limit); // 去掉多查的一条
         }
+        // 如果还有下一页，保存结果集的最后一条评论，作为游标
+        String encryptedState = null;
+        if (hasMore) {
+            VideoComments cursor = comments.get(comments.size() - 1);
+            nextOffset = NextOffset.builder().userId(userId).videoId(cursor.getVideoId()).lastCommentId(cursor.getId()).parentCommentId(cursor.getParentCommentId()).score(cursor.getScore()).build();
+            try {
+                encryptedState = PageTokenUtils.encryptState(nextOffset);
+            } catch (Exception e) {
+                log.error("加密偏移量时发生错误！", e);
+            }
+        }
         // 获取的评论ID集合
         List<String> commentIdsCollect = comments.stream().map(VideoComments::getId).toList();
         // 对应评论的用户ID集合
         List<Integer> userIdslist = comments.stream().map(VideoComments::getUserId).toList();
         // 2. 查询用户对目前获取的评论的点赞记录
-        List<CommentLike> likedList = mongoTemplate.find(new Query(Criteria.where("commentId").in(commentIdsCollect).and("userId").is(userId)), CommentLike.class);
+        List<CommentLike> likedList = List.of();
+        if (userId != -1) {
+            likedList = mongoTemplate.find(new Query(Criteria.where("commentId").in(commentIdsCollect).and("userId").is(userId)), CommentLike.class);
+        }
         // 3. 调用用户服务，批量查询评论拥有者信息
         List<User> users = new ArrayList<>();
         try {
@@ -208,11 +233,15 @@ public class CommentService {
             return vo;
         }).toList();
         // 构建最终结果并返回
-        HashMap<String, Object> map = new HashMap<>();
-        map.put("list", list); // 评论数据
-        map.put("hasMore", hasMore); // 是否还有更多标记
-        return Result.success(map);
+        // 对于未登录用户，不返回游标，以禁止翻页
+        CursorLoadVO loadVO = CursorLoadVO.builder()
+                .cursor(userId != -1 ? encryptedState : null)
+                .list(list)
+                .hasMore(userId != -1 && hasMore)
+                .build();
+        return Result.success(loadVO);
     }
+
 
     /**
      * 查询根评论方法
@@ -222,7 +251,7 @@ public class CommentService {
      * @param lasCommentId 上次加载的最后一条评论id，排除掉这一条
      * @return 评论列表
      */
-    public List<VideoComments> findRootComment(Integer videoId, Double score, String lasCommentId, int limit) {
+    private List<VideoComments> findRootComment(Integer videoId, Double score, String lasCommentId, int limit) {
         Query query = new Query();
 
         // 基本条件
@@ -236,8 +265,7 @@ public class CommentService {
 
         Criteria c2 = null;
         if (lasCommentId != null && !lasCommentId.isEmpty()) {
-            c2 = Criteria.where("_id").gt(new ObjectId(lasCommentId))
-                    .and("score").is(score);
+            c2 = Criteria.where("_id").gt(new ObjectId(lasCommentId)).and("score").is(score);
         }
 
         // 构造 OR 条件
@@ -261,9 +289,9 @@ public class CommentService {
      * @param lastCommentId   上次加载的最后一条评论id
      * @return 评论列表
      */
-    public List<VideoComments> findReplyComment(Integer videoId, String parentCommentId, String lastCommentId, int limit) {
+    private List<VideoComments> findReplyComment(Integer videoId, String parentCommentId, String lastCommentId, int limit) {
         Query query = new Query();
-
+        // TODO 如果回复被删除，前端的逻辑会找不到回复目标的Userinfo，待修复。
         // 基本条件
         query.addCriteria(Criteria.where("videoId").is(videoId));
         query.addCriteria(Criteria.where("parentCommentId").is(parentCommentId));

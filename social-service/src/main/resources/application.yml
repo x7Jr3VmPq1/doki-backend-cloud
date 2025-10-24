@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: social-service  # 社交关系服务
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 30333 # 端口号
+
+
+
+
+

@@ -28,6 +28,24 @@ public class RedisUtils {
         return stringRedisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
     }
 
+    /**
+     * 如果 key 不存在就设置 value，否则返回已有的 value
+     *
+     * @param key   Redis key
+     * @param value 要设置的 value
+     * @return 如果 key 已存在返回原 value，否则返回 null
+     */
+    public String setIfAbsentReturnExisting(String key, String value, long timeout, TimeUnit unit) {
+        Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(key, value);
+        if (success != null && success) {
+            // key 不存在，设置成功
+            return null;
+        } else {
+            // key 已存在，返回原 value
+            return stringRedisTemplate.opsForValue().get(key);
+        }
+    }
+
 
     public String get(String key) {
         return stringRedisTemplate.opsForValue().get(key);

@@ -64,6 +64,11 @@ spring:
             lb://comment-service
           predicates:
             - Path=/comment/**
+        - id: social-service # 社交关系服务
+          uri:
+            lb://social-service
+          predicates:
+            - Path=/social/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

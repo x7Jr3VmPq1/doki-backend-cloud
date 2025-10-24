@@ -1,8 +1,10 @@
 package com.megrez;
 
+import com.megrez.dto.NextOffset;
 import com.megrez.dto.VideoCommentDTO;
 import com.megrez.entity.VideoComments;
 import com.megrez.service.CommentService;
+import com.megrez.utils.PageTokenUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ public class CommentServiceTest {
     @Test
     public void insertComment() {
 
-        for (int i = 1; i <= 500; i++) {
+        for (int i = 1; i <= 20; i++) {
             VideoCommentDTO videoCommentDTO = new VideoCommentDTO();
             videoCommentDTO.setVideoId(10);
             videoCommentDTO.setContent("第" + i + "条测试评论");
@@ -46,4 +48,5 @@ public class CommentServiceTest {
         }
 
     }
+
 }

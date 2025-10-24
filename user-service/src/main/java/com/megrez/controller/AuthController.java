@@ -1,11 +1,11 @@
 package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
-import com.megrez.entity.User;
 import com.megrez.result.Result;
 import com.megrez.service.AuthService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -39,7 +39,8 @@ public class AuthController {
      * @return token
      */
     @GetMapping("/token")
-    public Result<String> getTokenByAuthCode(String code) {
-        return authService.getTokenByAuthCode(code);
+    public Result<String> getTokenByAuthCode(@RequestParam("userId") Integer userId,
+                                             @RequestParam("code") String code) {
+        return authService.getTokenByAuthCode(userId, code);
     }
 }
