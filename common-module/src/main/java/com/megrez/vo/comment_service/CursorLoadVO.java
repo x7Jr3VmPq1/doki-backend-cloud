@@ -1,4 +1,4 @@
-package com.megrez.vo;
+package com.megrez.vo.comment_service;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

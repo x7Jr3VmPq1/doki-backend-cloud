@@ -1,8 +1,7 @@
-package com.megrez.rabbit.dto;
+package com.megrez.rabbit.message;
 
 import com.megrez.entity.VideoComments;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

@@ -1,4 +1,4 @@
-package com.megrez.vo;
+package com.megrez.vo.comment_service;
 
 import com.megrez.entity.User;
 import com.megrez.entity.VideoComments;

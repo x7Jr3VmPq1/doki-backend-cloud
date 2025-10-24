@@ -1,22 +1,30 @@
 package com.megrez.service;
 
 import com.megrez.client.ImageServiceClient;
+import com.megrez.client.SocialServiceClient;
 import com.megrez.constant.GatewayHttpPath;
+import com.megrez.dto.social_service.CheckFollowDTO;
 import com.megrez.entity.User;
+import com.megrez.entity.UserFollow;
 import com.megrez.mapper.UserMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JWTUtil;
 import com.megrez.utils.PasswordUtils;
 
+import com.megrez.vo.user_service.UsersVO;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -24,11 +32,13 @@ public class UserService {
     private final SmsService smsService;
     private final UserMapper userMapper;
     private final ImageServiceClient imageServiceClient;
+    private final SocialServiceClient socialServiceClient;
 
-    public UserService(SmsService smsService, UserMapper userMapper, ImageServiceClient imageServiceClient) {
+    public UserService(SmsService smsService, UserMapper userMapper, ImageServiceClient imageServiceClient, SocialServiceClient socialServiceClient) {
         this.smsService = smsService;
         this.userMapper = userMapper;
         this.imageServiceClient = imageServiceClient;
+        this.socialServiceClient = socialServiceClient;
     }
 
     /**
@@ -103,14 +113,42 @@ public class UserService {
     /**
      * 根据用户ID批量获取用户信息
      *
-     * @param userId 用户ID集合
+     * @param targetIds 用户ID集合
+     * @param userId    查询用户ID（不必须）
      * @return 用户信息
      */
-    public Result<List<User>> getById(List<Integer> userId) {
-        List<User> users = userMapper.selectBatchIds(userId);
-        // 拼接头像地址
+    public Result<List<? extends User>> getByIds(Integer userId, List<Integer> targetIds) {
+        // 先对targetIds去重
+        targetIds = targetIds.stream().distinct().toList();
+        // 查询基础用户信息
+        List<? extends User> users = userMapper.selectBatchIds(targetIds);
+        // 1. 拼接头像地址
         users.forEach(e -> e.setAvatarUrl(GatewayHttpPath.AVATAR + e.getAvatarUrl()));
-        return Result.success(users);
+        // 2. 如果没有提供userId，直接返回这个结果。
+        if (userId == null) {
+            return Result.success(users);
+        }
+        // 3. 开始构建VOS集合。
+        List<UsersVO> usersVOS = users.stream().map(e -> {
+            UsersVO usersVO = new UsersVO();
+            BeanUtils.copyProperties(e, usersVO);
+            return usersVO;
+        }).toList();
+        // 4. 获取查询结果的ids
+        List<Integer> targetUidList = users.stream().map(User::getId).toList();
+        // 5. 调用关系服务，查询当前用户是否和这些用户有关注关系
+        Result<List<UserFollow>> listResult = socialServiceClient.checkFollow(new CheckFollowDTO(userId, targetUidList));
+        if (listResult.isSuccess()) {
+            // 6. 把查询到的结果转换为一个形如<id,UserFollow>的map，方便收集数据
+            Map<Integer, UserFollow> collect = listResult.getData().stream().collect(Collectors.toMap(
+                    UserFollow::getFollowingId,
+                    Function.identity()
+            ));
+            // 7. 设置结果，如果在结果集里找不到这个值，说明没有关注。
+            usersVOS.forEach(e -> e.setFollowed(collect.get(e.getId()) != null));
+        }
+        // 8. 返回最终结果。
+        return Result.success(usersVOS);
     }
 
     /**

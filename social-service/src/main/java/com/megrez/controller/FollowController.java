@@ -1,13 +1,12 @@
 package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
-import com.megrez.dto.checkFollowDTO;
+import com.megrez.dto.social_service.CheckFollowDTO;
 import com.megrez.entity.UserFollow;
 import com.megrez.result.Result;
 import com.megrez.service.FollowService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.annotation.Id;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,8 +46,8 @@ public class FollowController {
      * @param dto 查询DTO，包含当前用户id，要查询的目标id
      * @return 结果集，包含当前用户的关注列表。
      */
-    @GetMapping("/follow/check")
-    public Result<List<UserFollow>> checkFollow(@RequestBody checkFollowDTO dto) {
+    @PostMapping("/follow/check")
+    public Result<List<UserFollow>> checkFollow(@RequestBody CheckFollowDTO dto) {
         log.info("查询关注关系：{}", dto);
         return followService.checkFollow(dto.getUid(), dto.getTargetIds());
     }

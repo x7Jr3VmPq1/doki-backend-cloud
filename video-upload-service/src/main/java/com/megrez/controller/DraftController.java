@@ -2,8 +2,7 @@ package com.megrez.controller;
 
 import com.megrez.result.Result;
 import com.megrez.service.DraftService;
-import com.megrez.vo.VideoDraftVO;
-import org.apache.ibatis.annotations.Delete;
+import com.megrez.vo.videoupload_service.VideoDraftVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;

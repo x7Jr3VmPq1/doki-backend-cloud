@@ -2,7 +2,7 @@ package com.megrez.service;
 
 import com.megrez.path.FilesServerPath;
 import com.megrez.ImageType;
-import com.megrez.rabbit.dto.CommentDelMessage;
+import com.megrez.rabbit.message.CommentDelMessage;
 import com.megrez.rabbit.exchange.CommentDeleteExchange;
 import com.megrez.utils.JSONUtils;
 import org.slf4j.Logger;

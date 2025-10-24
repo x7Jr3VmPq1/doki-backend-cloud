@@ -1,11 +1,13 @@
 package com.megrez.controller;
 
+import com.megrez.annotation.CurrentUser;
 import com.megrez.entity.User;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.UserService;
 import com.megrez.utils.JWTUtil;
 import com.megrez.utils.Validator;
+import com.megrez.vo.user_service.UsersVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -60,16 +62,22 @@ public class UserController {
     /**
      * 根据用户ID批量获取用户信息
      *
-     * @param userId 用户ID集合
-     * @return 用户信息
+     * @param userId    操作用户ID（不必须）
+     * @param targetIds 目标用户ID集合
+     * @return 用户信息，如果提供了userId，会返回 List<UsersVO>(带有是否关注的信息)
+     * 否则会返回List<User>
      */
     @PostMapping("/userinfo")
-    public Result<List<User>> getUserinfoById(@RequestBody List<Integer> userId) {
-        log.info("查询用户资料，IDs：{}", userId);
-        if (userId.isEmpty()) {
+    public Result<List<? extends User>> getUserinfoById(
+            @RequestParam(required = false) Integer userId,
+            @CurrentUser(required = false) Integer tokenUid,
+            @RequestBody List<Integer> targetIds) {
+        log.info("查询用户资料，IDs：{}", targetIds);
+        if (targetIds.isEmpty()) {
             return Result.success(null);
         }
-        return userService.getById(userId);
+        // TODO 这是一个临时方案，由于前端的POST请求带不上查询参数
+        return userService.getByIds(tokenUid == -1 ? userId : tokenUid, targetIds);
     }
 
     @GetMapping("/userinfo")

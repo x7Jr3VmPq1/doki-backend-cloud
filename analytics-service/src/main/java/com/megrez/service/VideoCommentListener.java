@@ -1,12 +1,11 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.megrez.entity.Video;
 import com.megrez.entity.VideoComments;
 import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.VideoStatisticsMapper;
-import com.megrez.rabbit.dto.CommentAddMessage;
-import com.megrez.rabbit.dto.CommentDelMessage;
+import com.megrez.rabbit.message.CommentAddMessage;
+import com.megrez.rabbit.message.CommentDelMessage;
 import com.megrez.rabbit.exchange.CommentAddExchange;
 import com.megrez.rabbit.exchange.CommentDeleteExchange;
 import com.megrez.utils.JSONUtils;

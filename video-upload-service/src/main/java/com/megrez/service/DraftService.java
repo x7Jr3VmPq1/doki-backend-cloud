@@ -9,7 +9,7 @@ import com.megrez.result.Result;
 import com.megrez.utils.FileUtils;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
-import com.megrez.vo.VideoDraftVO;
+import com.megrez.vo.videoupload_service.VideoDraftVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 

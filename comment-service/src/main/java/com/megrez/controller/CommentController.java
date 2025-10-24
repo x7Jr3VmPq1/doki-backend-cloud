@@ -1,21 +1,15 @@
 package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
-import com.megrez.dto.VideoCommentDTO;
+import com.megrez.dto.comment_service.VideoCommentDTO;
 import com.megrez.entity.VideoComments;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.CommentService;
-import com.megrez.vo.CursorLoadVO;
-import com.megrez.vo.VideoCommentsVO;
-import jakarta.validation.constraints.NotNull;
+import com.megrez.vo.comment_service.CursorLoadVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * 评论增删改查接口

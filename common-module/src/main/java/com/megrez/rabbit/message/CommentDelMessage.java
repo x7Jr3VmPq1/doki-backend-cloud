@@ -1,4 +1,4 @@
-package com.megrez.rabbit.dto;
+package com.megrez.rabbit.message;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

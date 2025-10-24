@@ -3,11 +3,10 @@ package com.megrez.service;
 import com.megrez.client.ImageServiceClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.constant.GatewayHttpPath;
-import com.megrez.dto.NextOffset;
-import com.megrez.dto.VideoCommentDTO;
+import com.megrez.dto.comment_service.NextOffset;
+import com.megrez.dto.comment_service.VideoCommentDTO;
 import com.megrez.entity.*;
-import com.megrez.path.FilesServerPath;
-import com.megrez.rabbit.dto.CommentAddMessage;
+import com.megrez.rabbit.message.CommentAddMessage;
 import com.megrez.rabbit.exchange.CommentAddExchange;
 import com.megrez.rabbit.exchange.CommentDeleteExchange;
 import com.megrez.result.Response;
@@ -15,8 +14,9 @@ import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.PageTokenUtils;
 import com.megrez.utils.RabbitMQUtils;
-import com.megrez.vo.CursorLoadVO;
-import com.megrez.vo.VideoCommentsVO;
+import com.megrez.vo.comment_service.CursorLoadVO;
+import com.megrez.vo.comment_service.VideoCommentsVO;
+import com.megrez.vo.user_service.UsersVO;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,7 +198,7 @@ public class CommentService {
             likedList = mongoTemplate.find(new Query(Criteria.where("commentId").in(commentIdsCollect).and("userId").is(userId)), CommentLike.class);
         }
         // 3. 调用用户服务，批量查询评论拥有者信息
-        List<User> users = new ArrayList<>();
+        List<? extends User> users = new ArrayList<>();
         try {
             Result<List<User>> userinfoById = userServiceClient.getUserinfoById(userIdslist);
             if (userinfoById.isSuccess()) {
@@ -308,5 +308,4 @@ public class CommentService {
 
         return mongoTemplate.find(query, VideoComments.class);
     }
-
 }

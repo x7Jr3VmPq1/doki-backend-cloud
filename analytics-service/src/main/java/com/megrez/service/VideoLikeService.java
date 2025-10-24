@@ -1,10 +1,9 @@
 package com.megrez.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.VideoStatisticsMapper;
-import com.megrez.rabbit.dto.VideoLikeMessage;
+import com.megrez.rabbit.message.VideoLikeMessage;
 import com.megrez.rabbit.exchange.VideoLikeExchange;
 import com.megrez.utils.JSONUtils;
 import org.slf4j.Logger;

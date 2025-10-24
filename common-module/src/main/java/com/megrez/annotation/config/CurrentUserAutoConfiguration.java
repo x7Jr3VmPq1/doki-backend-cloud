@@ -1,4 +1,4 @@
-package com.megrez.config;
+package com.megrez.annotation.config;
 
 
 import com.megrez.annotation.resolver.CurrentUserArgumentResolver;

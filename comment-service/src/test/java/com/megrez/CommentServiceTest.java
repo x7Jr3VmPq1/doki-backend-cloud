@@ -1,10 +1,8 @@
 package com.megrez;
 
-import com.megrez.dto.NextOffset;
-import com.megrez.dto.VideoCommentDTO;
+import com.megrez.dto.comment_service.VideoCommentDTO;
 import com.megrez.entity.VideoComments;
 import com.megrez.service.CommentService;
-import com.megrez.utils.PageTokenUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

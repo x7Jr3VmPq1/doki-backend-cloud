@@ -1,4 +1,4 @@
-package com.megrez.dto;
+package com.megrez.dto.user_service;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

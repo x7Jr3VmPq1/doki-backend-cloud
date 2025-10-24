@@ -2,8 +2,7 @@ package com.megrez.service;
 
 import com.megrez.entity.CommentLike;
 import com.megrez.entity.VideoComments;
-import com.megrez.entity.VideoLikes;
-import com.megrez.rabbit.dto.CommentLikeMessage;
+import com.megrez.rabbit.message.CommentLikeMessage;
 import com.megrez.rabbit.exchange.CommentLikeExchange;
 import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;

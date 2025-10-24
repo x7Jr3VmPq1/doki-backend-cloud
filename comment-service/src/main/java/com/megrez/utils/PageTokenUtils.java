@@ -1,6 +1,6 @@
 package com.megrez.utils;
 
-import com.megrez.dto.NextOffset;
+import com.megrez.dto.comment_service.NextOffset;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

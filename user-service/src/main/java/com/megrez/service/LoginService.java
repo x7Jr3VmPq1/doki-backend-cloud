@@ -8,7 +8,7 @@ import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JWTUtil;
 import com.megrez.utils.PasswordUtils;
-import com.megrez.vo.LoginSuccessVO;
+import com.megrez.vo.user_service.LoginSuccessVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
