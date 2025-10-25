@@ -16,6 +16,10 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -45,11 +49,11 @@ public class FollowService {
         try {
             // 先尝试更新，如果没成功再插入新纪录。
             UserFollow build = UserFollow.builder().followerId(userId).followingId(targetId).build();
-            LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<>();
-            updateWrapper.eq(UserFollow::getFollowerId, userId)
+            LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<UserFollow>()
+                    .eq(UserFollow::getFollowerId, userId)
                     .eq(UserFollow::getFollowingId, targetId)
-                    .eq(UserFollow::getIsDeleted, true);
-            int updated = userFollowMapper.update(build, updateWrapper);
+                    .set(UserFollow::getIsDeleted, false);
+            int updated = userFollowMapper.update(updateWrapper);
             if (updated == 0) {
                 userFollowMapper.insert(build);
             }
@@ -74,6 +78,30 @@ public class FollowService {
         }
     }
 
+    /**
+     * 取消关注方法。
+     *
+     * @param userId   用户id
+     * @param targetId 目标用户id
+     * @return 操作结果
+     */
+    public Result<Void> unFollow(Integer userId, Integer targetId) {
+        // 不允许自己取消关注自己。
+        if (userId.equals(targetId)) {
+            return Result.success(null);
+        }
+        // 尝试更新记录。
+        LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<UserFollow>()
+                .eq(UserFollow::getFollowerId, userId)
+                .eq(UserFollow::getFollowingId, targetId)
+                .set(UserFollow::getIsDeleted, true);
+        int updated = userFollowMapper.update(updateWrapper);
+        if (updated > 0) {
+            return Result.success(null);
+        }
+        return Result.error(Response.UNKNOWN_WRONG);
+    }
+
 
     /**
      * 批量查询当前用户是否对目标用户有关注关系。
@@ -88,7 +116,13 @@ public class FollowService {
                 new LambdaQueryWrapper<UserFollow>()
                         .eq(UserFollow::getFollowerId, userId)
                         .in(UserFollow::getFollowingId, targetIds)
+                        .eq(UserFollow::getIsDeleted, false)
         );
-        return Result.success(userFollows);
+        // 根据传入的targetIds重新排序
+        Map<Integer, UserFollow> collect = userFollows.stream().collect(Collectors.toMap(UserFollow::getFollowingId, Function.identity()));
+
+        List<UserFollow> sorted = targetIds.stream().map(collect::get).filter(Objects::nonNull).toList();
+
+        return Result.success(sorted);
     }
 }

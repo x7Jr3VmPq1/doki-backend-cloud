@@ -17,6 +17,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ListService {
@@ -73,9 +77,19 @@ public class ListService {
         // 查询到的用户信息列表集合
         List<UsersVO> data = userinfoById.getData();
 
+//        // 先建立 id -> UsersVO 的映射
+//        Map<Integer, UsersVO> map = data.stream()
+//                .collect(Collectors.toMap(UsersVO::getId, Function.identity()));
+//
+//        // 按照 ids 的顺序重新构建列表
+//        data = ids.stream()
+//                .map(map::get)
+//                .filter(Objects::nonNull) // 如果某个 id 不存在，可选地过滤掉
+//                .toList();
+
         // 游标对象构建
         NextOffsetFollower nextOffset = NextOffsetFollower.builder()
-                .userFollow(userFollows.get(userFollows.size() -1))
+                .userFollow(userFollows.get(userFollows.size() - 1))
                 .userId(userId)
                 .mode(mode)
                 .build();
@@ -96,12 +110,16 @@ public class ListService {
     private List<UserFollow> getUserFollowList(Integer targetUid, Integer mode, NextOffsetFollower nextOffsetFollower) {
         int limit = 10; // 每次加载十条。
         // 构建基础查询
-        LambdaQueryWrapper<UserFollow> query = new LambdaQueryWrapper<UserFollow>().eq(UserFollow::getFollowerId, targetUid) // 关注者ID。
-                .last("LIMIT " + (limit + 1)); // 多返回一条作为有无更多数据的判断依据。
+        LambdaQueryWrapper<UserFollow> query = new LambdaQueryWrapper<UserFollow>()
+                .eq(UserFollow::getFollowerId, targetUid) // 关注者ID。
+                .eq(UserFollow::getIsDeleted, false)
+                .last(("LIMIT " + (limit + 1))); // 多返回一条作为有无更多数据的判断依据。
         switch (mode) {
             case 1, 2 -> query.orderByDesc(UserFollow::getCreatedAt); // 综合排序
             case 3 -> query.orderByAsc(UserFollow::getCreatedAt); // 最早关注
         }
+
+
         // 如果有游标，加入附加条件。
         if (nextOffsetFollower != null) {
             // 获取游标对象中存储的关注记录信息，获取关注时间。
@@ -115,7 +133,10 @@ public class ListService {
             }
         }
         // 执行查询
+
         return userFollowMapper.selectList(query);
+
+
     }
 
 }

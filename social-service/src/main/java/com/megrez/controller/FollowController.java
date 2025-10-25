@@ -51,7 +51,7 @@ public class FollowController {
                                  @RequestParam("tid") Integer targetUid) {
         log.info("用户ID: {} 取消关注用户ID:{}", userId, targetUid);
 
-        return Result.success(null);
+        return followService.unFollow(userId, targetUid);
     }
 
     /**

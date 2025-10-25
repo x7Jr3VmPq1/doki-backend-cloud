@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -118,37 +119,43 @@ public class UserService {
      * @return 用户信息
      */
     public Result<List<? extends User>> getByIds(Integer userId, List<Integer> targetIds) {
-        // 先对targetIds去重
+        // 1. 去重
         targetIds = targetIds.stream().distinct().toList();
-        // 查询基础用户信息
+
+        // 2. 查询
         List<? extends User> users = userMapper.selectBatchIds(targetIds);
-        // 1. 拼接头像地址
+
+        // 3. 拼接头像地址
         users.forEach(e -> e.setAvatarUrl(GatewayHttpPath.AVATAR + e.getAvatarUrl()));
-        // 2. 如果没有提供userId，直接返回这个结果。
-        if (userId == null) {
-            return Result.success(users);
-        }
-        // 3. 开始构建VOS集合。
+
+        // 4. 构建 VOs
         List<UsersVO> usersVOS = users.stream().map(e -> {
             UsersVO usersVO = new UsersVO();
             BeanUtils.copyProperties(e, usersVO);
             return usersVO;
         }).toList();
-        // 4. 获取查询结果的ids
-        List<Integer> targetUidList = users.stream().map(User::getId).toList();
-        // 5. 调用关系服务，查询当前用户是否和这些用户有关注关系
-        Result<List<UserFollow>> listResult = socialServiceClient.checkFollow(new CheckFollowDTO(userId, targetUidList));
-        if (listResult.isSuccess()) {
-            // 6. 把查询到的结果转换为一个形如<id,UserFollow>的map，方便收集数据
-            Map<Integer, UserFollow> collect = listResult.getData().stream().collect(Collectors.toMap(
-                    UserFollow::getFollowingId,
-                    Function.identity()
-            ));
-            // 7. 设置结果，如果在结果集里找不到这个值，说明没有关注。
-            usersVOS.forEach(e -> e.setFollowed(collect.get(e.getId()) != null));
+
+        // 5. 如果有 userId，补充关注状态
+        if (userId != null) {
+            List<Integer> targetUidList = users.stream().map(User::getId).toList();
+            Result<List<UserFollow>> listResult = socialServiceClient.checkFollow(new CheckFollowDTO(userId, targetUidList));
+            if (listResult.isSuccess()) {
+                Map<Integer, UserFollow> followMap = listResult.getData().stream()
+                        .collect(Collectors.toMap(UserFollow::getFollowingId, Function.identity()));
+                usersVOS.forEach(e -> e.setFollowed(followMap.containsKey(e.getId())));
+            }
         }
-        // 8. 返回最终结果。
-        return Result.success(usersVOS);
+
+        // 6. 重新排序，让结果与传入的 targetIds 顺序一致
+        Map<Integer, UsersVO> voMap = usersVOS.stream()
+                .collect(Collectors.toMap(UsersVO::getId, Function.identity()));
+
+        List<UsersVO> sorted = targetIds.stream()
+                .map(voMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        return Result.success(sorted);
     }
 
     /**
