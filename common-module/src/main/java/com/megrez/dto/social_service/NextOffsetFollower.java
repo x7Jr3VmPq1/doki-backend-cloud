@@ -1,6 +1,7 @@
 package com.megrez.dto.social_service;
 
-import com.megrez.vo.social_service.FollowerVO;
+import com.megrez.entity.UserFollow;
+import com.megrez.vo.social_service.Follower;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class NextOffsetFollower {
-    private Integer userId; // 请求的用户
-    private FollowerVO followerVO; // 关注者视图对象
+    private Integer userId; // 发起查询请求的用户
+    private UserFollow userFollow; // 关注记录对象，存储上次加载的最后一条记录内容
     private Integer mode; // 拉取模式，1=综合，2=最近，3=最早
     @Builder.Default
     Long timestamp = System.currentTimeMillis(); // 时间戳

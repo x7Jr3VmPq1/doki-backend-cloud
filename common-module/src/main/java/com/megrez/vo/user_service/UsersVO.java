@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UsersVO extends User {
-    private Boolean followed = false;
+    private Boolean followed = false; // 当前用户是否关注了此用户
 }

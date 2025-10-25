@@ -1,7 +1,6 @@
 package com.megrez.vo.social_service;
 
-import com.megrez.entity.User;
-import com.megrez.vo.comment_service.VideoCommentsVO;
+import com.megrez.vo.user_service.UsersVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +14,7 @@ import java.util.List;
 @Builder
 public class UserCursorLoadVO {
     @Builder.Default
-    private List<User> list = List.of();
+    private List<UsersVO> list = List.of();
     @Builder.Default
     private Boolean hasMore = false;
     @Builder.Default
