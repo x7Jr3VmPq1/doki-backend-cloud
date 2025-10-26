@@ -40,19 +40,16 @@ public class UserController {
      * 更新指定用户信息
      *
      * @param user  用户信息表单
-     * @param token token
+     * @param userId 当前用户ID
      * @return 操作结果
      */
     @PutMapping("/update")
     public Result<User> update(@RequestBody User user,
-                               @RequestHeader("Authorization") String token) {
+                               @CurrentUser Integer userId) {
 
         log.info("修改用户信息：{}", user.getId());
-        if (token == null) {
+        if (!userId.equals(user.getId())) {
             return Result.error(Response.UNAUTHORIZED);
-        }
-        if (!JWTUtil.isSameUser(user.getId(), token)) {
-            return Result.error(Response.FORBIDDEN);
         }
 
         return userService.update(user);

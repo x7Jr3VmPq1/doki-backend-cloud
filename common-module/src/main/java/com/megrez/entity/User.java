@@ -31,8 +31,11 @@ public class User {
     private String bio;
     // 注册时间
     @JsonIgnore
-    private long createdAt;
+    private long createdAt = System.currentTimeMillis();
     // 更新时间
     @JsonIgnore
-    private long updatedAt;
+    private long updatedAt = System.currentTimeMillis();
+    // 测试数据标记
+    @JsonIgnore
+    private Integer isTest = 0;
 }

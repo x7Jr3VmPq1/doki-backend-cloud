@@ -6,7 +6,8 @@ import com.megrez.entity.VideoComments;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.CommentService;
-import com.megrez.vo.comment_service.CursorLoadVO;
+import com.megrez.vo.CursorLoad;
+import com.megrez.vo.comment_service.VideoCommentsVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -71,7 +72,7 @@ public class CommentController {
      * @return 获取的评论集合
      */
     @GetMapping("/get")
-    public Result<CursorLoadVO> getComments(
+    public Result<CursorLoad<VideoCommentsVO>> getComments(
             @CurrentUser(required = false) Integer userId,
             @RequestParam Integer videoId,
             @RequestParam(required = false) String cursor,

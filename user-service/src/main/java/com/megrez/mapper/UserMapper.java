@@ -21,20 +21,10 @@ public interface UserMapper extends BaseMapper<User> {
      *
      * @param user 用户信息
      */
-    @Insert("INSERT INTO user (phone_number,username,avatar_url,created_at,updated_at) " +
-            "VALUE (#{phoneNumber},#{username},#{avatarUrl},#{createdAt},#{updatedAt})")
+    @Insert("INSERT INTO user (phone_number,username,avatar_url,created_at,updated_at,is_test) " +
+            "VALUE (#{phoneNumber},#{username},#{avatarUrl},#{createdAt},#{updatedAt},#{isTest})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void add(User user);
-
-    /**
-     * 更新用户信息
-     *
-     * @param user 用户信息
-     * @return 影响行数
-     */
-    @Update("UPDATE user SET username = #{username},avatar_url = #{avatarUrl},bio=#{bio} " +
-            "WHERE id = #{id}")
-    int update(User user);
 
     /**
      * 修改密码

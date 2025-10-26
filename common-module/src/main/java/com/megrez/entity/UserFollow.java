@@ -52,4 +52,7 @@ public class UserFollow {
      */
     @Builder.Default
     private Integer isDeleted = 0;
+
+    @Builder.Default
+    private Integer isTest = 0;
 }

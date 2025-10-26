@@ -14,7 +14,7 @@ import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.PageTokenUtils;
 import com.megrez.utils.RabbitMQUtils;
-import com.megrez.vo.comment_service.CursorLoadVO;
+import com.megrez.vo.CursorLoad;
 import com.megrez.vo.comment_service.VideoCommentsVO;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -143,7 +143,7 @@ public class CommentService {
      * @param parentCommentId 父评论id
      * @return 评论列表
      */
-    public Result<CursorLoadVO> getComments(Integer userId, Integer videoId, String nextOffsetCoded, String parentCommentId) {
+    public Result<CursorLoad<VideoCommentsVO>> getComments(Integer userId, Integer videoId, String nextOffsetCoded, String parentCommentId) {
 
         // 未登录用户，禁止获取回复
         if (userId == -1 && parentCommentId != null) {
@@ -176,8 +176,7 @@ public class CommentService {
         List<VideoComments> comments = parentCommentId == null ? findRootComment(videoId, nextOffset.getScore(), nextOffset.getLastCommentId(), limit + 1) : findReplyComment(videoId, parentCommentId, nextOffset.getLastCommentId(), limit + 1);
         // 没有查询到任何评论，返回空集合
         if (comments.isEmpty()) {
-            CursorLoadVO emptyResult = CursorLoadVO.builder().build();
-            return Result.success(emptyResult);
+            return Result.success(CursorLoad.empty());
         }
         boolean hasMore = false;    // 是否还有更多评论标记
         if (comments.size() > limit) {
@@ -241,12 +240,11 @@ public class CommentService {
         }).toList();
         // 构建最终结果并返回
         // 对于未登录用户，不返回游标，以禁止翻页
-        CursorLoadVO loadVO = CursorLoadVO.builder()
-                .cursor(userId != -1 ? encryptedState : null)
-                .list(list)
-                .hasMore(userId != -1 && hasMore)
-                .build();
-        return Result.success(loadVO);
+        return Result.success(CursorLoad.of(
+                list,
+                userId != -1 && hasMore,
+                userId != -1 ? encryptedState : null)
+        );
     }
 
 

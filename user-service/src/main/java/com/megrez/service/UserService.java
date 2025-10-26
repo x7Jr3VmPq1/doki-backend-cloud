@@ -1,5 +1,6 @@
 package com.megrez.service;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.megrez.client.ImageServiceClient;
 import com.megrez.client.SocialServiceClient;
 import com.megrez.constant.GatewayHttpPath;
@@ -81,34 +82,39 @@ public class UserService {
 
 
     public Result<User> update(User user) {
-        // 1. 调用图片上传服务，获取上传后的文件名。
-        HashMap<String, String> base64 = new HashMap<>();
-        base64.put("base64", user.getAvatarUrl());
-
-        try {
+        // 1. 先判断有没有上传头像
+        if (user.getAvatarUrl() != null) {
+            // 调用图片上传服务，获取上传后的文件名。
+            HashMap<String, String> base64 = new HashMap<>();
+            base64.put("base64", user.getAvatarUrl());
             Result<String> result = imageServiceClient.uploadAvatar(base64);
-
-            // 2. 如果成功，进行修改用户信息。
+            // 如果成功，把返回的文件名添加到对象上。
             if (result.isSuccess()) {
-                // 把头像URL赋值为获取到的文件名
                 user.setAvatarUrl(result.getData());
-                // 更新写入
-                int updated = userMapper.update(user);
-                if (updated == 1) {
-                    // 成功返回更新后的user对象
-                    return Result.success(user);
-                }
-                // 没有更新任何用户信息，返回失败
-                return Result.error(Response.USER_NOT_FOUND_WRONG);
+            } else {
+                log.error("上传图片失败，原因：{}", result.getMsg());
+                return Result.error(Response.UNKNOWN_WRONG);
             }
-            // 3. 上传失败，打印错误信息
-            log.error("上传图片失败，原因：{}", result.getMsg());
-            return Result.error(Response.USER_AVATAR_UPLOAD_WRONG);
-        } catch (Exception e) {
-            // 4. 服务异常，打印错误信息
-            log.error("上传服务异常：{}", e.getMessage());
-            return Result.error(Response.USER_AVATAR_UPLOAD_WRONG);
         }
+        // 更新写入
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(User::getId, user.getId()); // 用户ID
+        wrapper.set(User::getUsername, user.getUsername()); // 用户名
+        wrapper.set(User::getBio, user.getBio()); // 个人简介
+        wrapper.set(User::getUpdatedAt, System.currentTimeMillis()); // 更新时间
+        // 只有在头像不为空时才更新。
+        if (user.getAvatarUrl() != null) {
+            wrapper.set(User::getAvatarUrl, user.getAvatarUrl());
+        }
+
+        log.info("{}", user);
+        int updated = userMapper.update(wrapper);
+        if (updated == 1) {
+            // 成功返回更新后的user对象
+            return Result.success(user);
+        }
+        // 没有更新任何用户信息，返回失败
+        return Result.error(Response.USER_NOT_FOUND_WRONG);
     }
 
     /**
@@ -124,6 +130,10 @@ public class UserService {
 
         // 2. 查询
         List<? extends User> users = userMapper.selectBatchIds(targetIds);
+
+        if (users.isEmpty()) {
+            return Result.error(Response.USER_NOT_FOUND_WRONG);
+        }
 
         // 3. 拼接头像地址
         users.forEach(e -> e.setAvatarUrl(GatewayHttpPath.AVATAR + e.getAvatarUrl()));

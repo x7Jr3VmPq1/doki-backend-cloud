@@ -52,6 +52,7 @@ public class FollowService {
             LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<UserFollow>()
                     .eq(UserFollow::getFollowerId, userId)
                     .eq(UserFollow::getFollowingId, targetId)
+                    .set(UserFollow::getUpdatedAt, System.currentTimeMillis())
                     .set(UserFollow::getIsDeleted, false);
             int updated = userFollowMapper.update(updateWrapper);
             if (updated == 0) {
@@ -94,6 +95,7 @@ public class FollowService {
         LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<UserFollow>()
                 .eq(UserFollow::getFollowerId, userId)
                 .eq(UserFollow::getFollowingId, targetId)
+                .set(UserFollow::getUpdatedAt, System.currentTimeMillis())
                 .set(UserFollow::getIsDeleted, true);
         int updated = userFollowMapper.update(updateWrapper);
         if (updated > 0) {

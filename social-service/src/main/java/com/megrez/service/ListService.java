@@ -1,26 +1,24 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.megrez.client.UserServiceClient;
 import com.megrez.dto.social_service.NextOffsetFollower;
+import com.megrez.entity.User;
 import com.megrez.entity.UserFollow;
 import com.megrez.mapper.UserFollowMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.PageTokenUtils;
-import com.megrez.vo.social_service.Follower;
-import com.megrez.vo.social_service.UserCursorLoadVO;
+import com.megrez.vo.CursorLoad;
 import com.megrez.vo.user_service.UsersVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
 
 @Service
 public class ListService {
@@ -37,25 +35,26 @@ public class ListService {
     /**
      * 查询关注列表，支持游标滚动加载
      *
+     * @param type      拉取类型，1. 关注 2.粉丝
      * @param targetUid 目标用户id
      * @param userId    当前操作用户id
      * @param cursor    游标
-     * @param mode      模式  1. 综合排序(目前先按照最近关注) 2. 最近关注 3. 最早关注
+     * @param mode      排序模式  1. 综合排序(目前先按照最近关注) 2. 最近关注 3. 最早关注
      * @return 用户视图列表
      * @throws Exception 如果解密游标发生错误，抛出异常。
      */
-    public Result<UserCursorLoadVO> getFollowings(Integer targetUid, Integer userId, String cursor, Integer mode) throws Exception {
+    public Result<CursorLoad<UsersVO>> getFollowings(Integer type, Integer targetUid, Integer userId, String cursor, Integer mode) throws Exception {
 
         // 先尝试获取游标对象。
         NextOffsetFollower follower = (cursor == null) ?
                 null : PageTokenUtils.decryptState(cursor, NextOffsetFollower.class);
         int limit = 10;
         // 执行查询。
-        List<UserFollow> userFollows = getUserFollowList(targetUid, mode, follower);
+        List<UserFollow> userFollows = getUserFollowList(type, targetUid, mode, follower);
 
         // 没有查询到关注记录，返回空集合。
         if (userFollows.isEmpty()) {
-            return Result.success(UserCursorLoadVO.builder().build());
+            return Result.success(CursorLoad.empty());
         }
 
         // 有无更多数据的标记。
@@ -66,7 +65,11 @@ public class ListService {
             userFollows = userFollows.subList(0, userFollows.size() - 1);
         }
         // 收集Ids，以查询用户信息。
-        List<Integer> ids = userFollows.stream().map(UserFollow::getFollowingId).toList();
+        // 查询关注记录时，按照targetUid查询它的关注或粉丝列表
+        Function<UserFollow, Integer> getter = type == 1
+                ? UserFollow::getFollowingId
+                : UserFollow::getFollowerId;
+        List<Integer> ids = userFollows.stream().map(getter).toList();
 
         // 调用远程服务获取用户信息。
         Result<List<UsersVO>> userinfoById = userServiceClient.getUserinfoByIdWithIfFollowed(userId, ids);
@@ -77,16 +80,6 @@ public class ListService {
         // 查询到的用户信息列表集合
         List<UsersVO> data = userinfoById.getData();
 
-//        // 先建立 id -> UsersVO 的映射
-//        Map<Integer, UsersVO> map = data.stream()
-//                .collect(Collectors.toMap(UsersVO::getId, Function.identity()));
-//
-//        // 按照 ids 的顺序重新构建列表
-//        data = ids.stream()
-//                .map(map::get)
-//                .filter(Objects::nonNull) // 如果某个 id 不存在，可选地过滤掉
-//                .toList();
-
         // 游标对象构建
         NextOffsetFollower nextOffset = NextOffsetFollower.builder()
                 .userFollow(userFollows.get(userFollows.size() - 1))
@@ -94,29 +87,35 @@ public class ListService {
                 .mode(mode)
                 .build();
 
-        log.info("构建的游标：{}", nextOffset);
-
-        // 构建最终内容
-        UserCursorLoadVO build = UserCursorLoadVO.builder()
-                .list(data)
-                .hasMore(hasMore)
-                .cursor(hasMore ?
-                        PageTokenUtils.encryptState(nextOffset)
-                        : null)
-                .build();
-        return Result.success(build);
+        return Result.success(CursorLoad.of(
+                data,
+                hasMore,
+                hasMore ? PageTokenUtils.encryptState(nextOffset) : null)
+        );
     }
 
-    private List<UserFollow> getUserFollowList(Integer targetUid, Integer mode, NextOffsetFollower nextOffsetFollower) {
+    /**
+     * 查询关注记录方法
+     *
+     * @param type               类型，1. 查询关注  2. 查询粉丝
+     * @param targetUid          目标用户id
+     * @param mode               排序模式  1. 综合排序(目前先按照最近关注) 2. 最近关注 3. 最早关注
+     * @param nextOffsetFollower 游标对象
+     * @return 关注列表
+     */
+    private List<UserFollow> getUserFollowList(Integer type, Integer targetUid, Integer mode, NextOffsetFollower nextOffsetFollower) {
         int limit = 10; // 每次加载十条。
         // 构建基础查询
+        SFunction<UserFollow, Integer> getter = type == 1
+                ? UserFollow::getFollowerId
+                : UserFollow::getFollowingId;
         LambdaQueryWrapper<UserFollow> query = new LambdaQueryWrapper<UserFollow>()
-                .eq(UserFollow::getFollowerId, targetUid) // 关注者ID。
+                .eq(getter, targetUid) // 目标用户ID。
                 .eq(UserFollow::getIsDeleted, false)
                 .last(("LIMIT " + (limit + 1))); // 多返回一条作为有无更多数据的判断依据。
         switch (mode) {
-            case 1, 2 -> query.orderByDesc(UserFollow::getCreatedAt); // 综合排序
-            case 3 -> query.orderByAsc(UserFollow::getCreatedAt); // 最早关注
+            case 1, 2 -> query.orderByDesc(UserFollow::getUpdatedAt); // 综合排序
+            case 3 -> query.orderByAsc(UserFollow::getUpdatedAt); // 最早关注
         }
 
 
@@ -126,7 +125,7 @@ public class ListService {
             UserFollow userFollow = nextOffsetFollower.getUserFollow();
             Long updatedAt = userFollow.getUpdatedAt();
             // 排除上次加载的记录。
-            query.ne(UserFollow::getFollowingId, userFollow.getId());
+            query.ne(UserFollow::getId, userFollow.getId());
             switch (mode) {
                 case 1, 2 -> query.le(UserFollow::getCreatedAt, updatedAt); // 综合排序
                 case 3 -> query.ge(UserFollow::getCreatedAt, updatedAt); // 最早关注
