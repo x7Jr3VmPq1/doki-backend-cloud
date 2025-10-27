@@ -8,7 +8,7 @@ import com.megrez.mapper.UserStatisticsMapper;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
-import com.megrez.vo.VideoStatVO;
+import com.megrez.vo.analytics_service.VideoStatVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -36,26 +36,12 @@ public class DataService {
      * @param ids 视频ID集合
      * @return 结果集
      */
-    public Result<VideoStatVO> getVideoStatById(List<Integer> ids, Integer userId) {
+    public Result<List<VideoStatistics>> getVideoStatById(List<Integer> ids, Integer userId) {
         // 查询视频统计信息
         List<VideoStatistics> statisticsList = videoStatisticsMapper.selectList(
                 new LambdaQueryWrapper<VideoStatistics>().in(VideoStatistics::getVideoId, ids)
         );
-        VideoStatVO videoStatVO = new VideoStatVO();
-        BeanUtils.copyProperties(statisticsList.get(0), videoStatVO);
-        // 已登录的请求，判断是否点赞了该视频
-        if (userId > 0) {
-            // 判断该用户是否点赞视频
-            try {
-                Result<Boolean> result = likeFavoriteClient.existLikeRecord(userId, videoStatVO.getVideoId());
-                if (result.isSuccess()) {
-                    videoStatVO.setUserLiked(result.getData());
-                }
-            } catch (Exception e) {
-                log.error("点赞/收藏服务调用异常");
-            }
-        }
-        return Result.success(videoStatVO);
+        return Result.success(statisticsList);
     }
 
     /**

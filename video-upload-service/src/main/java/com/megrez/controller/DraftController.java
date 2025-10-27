@@ -1,5 +1,6 @@
 package com.megrez.controller;
 
+import com.megrez.annotation.CurrentUser;
 import com.megrez.result.Result;
 import com.megrez.service.DraftService;
 import com.megrez.vo.videoupload_service.VideoDraftVO;
@@ -25,32 +26,32 @@ public class DraftController {
      * @return 草稿视图类
      */
     @GetMapping
-    public Result<VideoDraftVO> get(Integer userId) {
-        return draftService.get(10000);
+    public Result<VideoDraftVO> get(@CurrentUser Integer userId) {
+        return draftService.get(userId);
     }
 
     @PostMapping("/create")
-    public Result<VideoDraftVO> create(Integer userId) {
-        return draftService.createDraft(10000);
+    public Result<VideoDraftVO> create(@CurrentUser Integer userId) {
+        return draftService.createDraft(userId);
     }
 
     @PutMapping("/update")
-    public Result<VideoDraftVO> update(Integer userId, @RequestBody VideoDraftVO draft) {
+    public Result<VideoDraftVO> update(@CurrentUser Integer userId, @RequestBody VideoDraftVO draft) {
         log.info("更新草稿：{}", draft);
-        return draftService.updateDraft(10000, draft);
+        return draftService.updateDraft(userId, draft);
     }
 
     @DeleteMapping("/delete")
-    public Result<Void> delete(Integer userId,
-                         @RequestParam("draftId") Integer draftId) {
+    public Result<Void> delete(@CurrentUser Integer userId,
+                               @RequestParam("draftId") Integer draftId) {
         log.info("删除草稿：{}", draftId);
-        return draftService.delete(10000, draftId);
+        return draftService.delete(userId, draftId);
     }
 
     @PostMapping("/submit")
-    public Result<Void> submit(Integer userId,
-                         @RequestBody VideoDraftVO draft) {
+    public Result<Void> submit(@CurrentUser Integer userId,
+                               @RequestBody VideoDraftVO draft) {
         log.info("提交发布：{}", draft);
-        return draftService.submit(10000, draft);
+        return draftService.submit(userId, draft);
     }
 }

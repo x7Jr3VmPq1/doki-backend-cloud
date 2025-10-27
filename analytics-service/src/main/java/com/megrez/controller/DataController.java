@@ -6,7 +6,7 @@ import com.megrez.entity.VideoStatistics;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.DataService;
-import com.megrez.vo.VideoStatVO;
+import com.megrez.vo.analytics_service.VideoStatVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +32,7 @@ public class DataController {
      * @return 统计信息视图对象
      */
     @PostMapping("/videos")
-    public Result<VideoStatVO> getVideoStatById(
+    public Result<List<VideoStatistics>> getVideoStatById(
             @CurrentUser(required = false) Integer userId,
             @RequestBody List<Integer> ids) {
         log.info("用户：{}查询视频统计信息，视频id：{}", userId, ids);

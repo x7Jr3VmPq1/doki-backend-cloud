@@ -10,4 +10,13 @@ public class GatewayHttpPath {
      * 评论图片服务器的HTTP地址
      */
     public static final String COMMENT_IMG = "http://localhost:10010/image/comment/";
+
+    /**
+     * 视频封面图服务器的HTTP地址
+     */
+    public static final String VIDEO_COVER_IMG = "http://localhost:10010/image/cover/";
+    /**
+     * 视频播放服务器的HTTP地址
+     */
+    public static final String VIDEO_PLAY = "http://localhost:10010/video/play/";
 }

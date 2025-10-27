@@ -6,7 +6,9 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-// 加密对象的通用工具类
+/**
+ * 加密对象的通用工具类
+ */
 public class PageTokenUtils {
 
     // 密钥

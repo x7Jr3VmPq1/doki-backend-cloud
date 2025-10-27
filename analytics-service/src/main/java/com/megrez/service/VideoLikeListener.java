@@ -12,12 +12,12 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 @Service
-public class VideoLikeService {
+public class VideoLikeListener {
 
     private final VideoStatisticsMapper videoStatisticsMapper;
-    private static final Logger log = LoggerFactory.getLogger(VideoLikeService.class);
+    private static final Logger log = LoggerFactory.getLogger(VideoLikeListener.class);
 
-    public VideoLikeService(VideoStatisticsMapper videoStatisticsMapper) {
+    public VideoLikeListener(VideoStatisticsMapper videoStatisticsMapper) {
         this.videoStatisticsMapper = videoStatisticsMapper;
     }
 

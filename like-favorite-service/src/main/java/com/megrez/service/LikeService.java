@@ -25,11 +25,6 @@ public class LikeService {
         this.rabbitMQUtils = rabbitMQUtils;
     }
 
-    /*
-     * 发生一个视频点赞之后，应该具有哪些动作？
-     * 1. 通知被点赞视频的上传者
-     * 2. 给视频统计数据的点赞数量进行变更操作
-     */
 
     /**
      * 给视频添加点赞记录方法

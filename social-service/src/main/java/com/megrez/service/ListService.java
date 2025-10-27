@@ -127,8 +127,8 @@ public class ListService {
             // 排除上次加载的记录。
             query.ne(UserFollow::getId, userFollow.getId());
             switch (mode) {
-                case 1, 2 -> query.le(UserFollow::getCreatedAt, updatedAt); // 综合排序
-                case 3 -> query.ge(UserFollow::getCreatedAt, updatedAt); // 最早关注
+                case 1, 2 -> query.le(UserFollow::getUpdatedAt, updatedAt); // 综合排序
+                case 3 -> query.ge(UserFollow::getUpdatedAt, updatedAt); // 最早关注
             }
         }
         // 执行查询

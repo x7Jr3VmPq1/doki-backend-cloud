@@ -1,4 +1,4 @@
-package com.megrez.vo;
+package com.megrez.vo.analytics_service;
 
 import com.megrez.entity.VideoStatistics;
 import lombok.Data;

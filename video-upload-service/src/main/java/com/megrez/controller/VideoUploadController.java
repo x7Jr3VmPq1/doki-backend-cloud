@@ -1,5 +1,6 @@
 package com.megrez.controller;
 
+import com.megrez.annotation.CurrentUser;
 import com.megrez.result.Result;
 import com.megrez.service.VideoUploadService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,8 +20,9 @@ public class VideoUploadController {
     }
 
     @PostMapping
-    public Result<String> upload(@RequestParam("file") MultipartFile video,
-                         @RequestParam("draft_id") Integer draftId) {
+    public Result<String> upload(
+            @RequestParam("file") MultipartFile video,
+            @RequestParam("draft_id") Integer draftId) {
         return videoUploadService.upload(video, draftId);
     }
 }

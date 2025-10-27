@@ -4,9 +4,13 @@ import com.megrez.annotation.CurrentUser;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.LikeService;
+import com.megrez.service.RecordService;
+import com.megrez.vo.like_favortite_service.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/like")
@@ -16,7 +20,7 @@ public class LikeController {
 
     private static final Logger log = LoggerFactory.getLogger(LikeController.class);
 
-    public LikeController(LikeService likeService) {
+    public LikeController(LikeService likeService, RecordService recordService) {
         this.likeService = likeService;
     }
 

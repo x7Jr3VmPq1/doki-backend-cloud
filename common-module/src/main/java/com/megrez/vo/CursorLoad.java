@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 游标加载评论响应体
  * list:具体的数据列表
- * hasMore:是否还有更多评论
+ * hasMore:是否还有更多
  * cursor:游标，一个加密后的字符串，其中是分页依据
  */
 @Data
