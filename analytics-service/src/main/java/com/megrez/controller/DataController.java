@@ -36,6 +36,9 @@ public class DataController {
             @CurrentUser(required = false) Integer userId,
             @RequestBody List<Integer> ids) {
         log.info("用户：{}查询视频统计信息，视频id：{}", userId, ids);
+        if (ids.isEmpty()) {
+            return Result.success(List.of());
+        }
         return dataService.getVideoStatById(ids, userId);
     }
 

@@ -41,59 +41,59 @@ public class VideoStatistics {
      * 播放次数
      * 视频被播放的总次数
      */
-    private Long viewCount;
+    private Long viewCount = 0L;
 
     /**
      * 点赞数
      * 用户点赞的总次数
      */
-    private Long likeCount;
+    private Long likeCount = 0L;
 
     /**
      * 点踩数
      * 用户点踩的总次数
      */
     @JsonIgnore
-    private Long dislikeCount;
+    private Long dislikeCount = 0L;
 
     /**
      * 评论数
      * 视频下的评论总数
      */
-    private Long commentCount;
+    private Long commentCount = 0L;
 
     /**
      * 分享数
      * 视频被分享的总次数
      */
-    private Long shareCount;
+    private Long shareCount = 0L;
 
     /**
      * 收藏数
      * 视频被收藏的总次数
      */
-    private Long favoriteCount;
+    private Long favoriteCount = 0L;
 
     /**
      * 下载数
      * 视频被下载的总次数
      */
     @JsonIgnore
-    private Long downloadCount;
+    private Long downloadCount = 0L;
 
     /**
      * 创建时间戳
      * 统计记录创建的时间
      */
     @JsonIgnore
-    private Long createdTime;
+    private Long createdTime = System.currentTimeMillis();
 
     /**
      * 更新时间戳
      * 统计信息最后修改的时间
      */
     @JsonIgnore
-    private Long updatedTime;
+    private Long updatedTime = System.currentTimeMillis();
 
     /**
      * 是否删除
@@ -101,5 +101,11 @@ public class VideoStatistics {
      */
     @TableLogic(value = "0", delval = "1")
     @JsonIgnore
-    private Integer deleted;
+    private Integer deleted = 0;
+
+    /**
+     * 测试数据标记
+     */
+    @JsonIgnore
+    private Integer isTest = 0;
 }

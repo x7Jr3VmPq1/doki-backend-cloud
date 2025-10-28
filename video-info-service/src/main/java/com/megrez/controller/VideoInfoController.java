@@ -45,9 +45,11 @@ public class VideoInfoController {
      * @return 用户作品集合
      */
     @GetMapping("/all")
-    public Result<List<Video>> getVideosInfoByUserId(@CurrentUser(required = false) Integer userId, @RequestParam Integer tid) {
+    public Result<CursorLoad<VideoVO>> getVideosInfoByUserId(@CurrentUser(required = false) Integer userId,
+                                                             @RequestParam Integer tid,
+                                                             @RequestParam(required = false) String cursor) throws Exception {
         log.info("获取用户视频信息：{}", tid);
-        return videoInfoService.getVideosInfoByUserId(userId, tid);
+        return videoInfoService.getVideosInfoByUserId(userId, tid, cursor);
     }
 
     /**
@@ -59,10 +61,10 @@ public class VideoInfoController {
      */
     @GetMapping("/likes")
     public Result<CursorLoad<VideoVO>> getLikeVideosInfoByUserId(@CurrentUser(required = false) Integer uid,
-                                                        @RequestParam Integer tid,
-                                                        @RequestParam(required = false) String cursor) {
+                                                                 @RequestParam Integer tid,
+                                                                 @RequestParam(required = false) String cursor) {
         log.info("获取用户点赞视频信息：{}", tid);
-        return videoInfoService.getLikeVideosInfoByUserId(uid, tid,cursor);
+        return videoInfoService.getLikeVideosInfoByUserId(uid, tid, cursor);
     }
 //
 //    /**

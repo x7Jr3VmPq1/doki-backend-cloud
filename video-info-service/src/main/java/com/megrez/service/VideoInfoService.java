@@ -10,8 +10,8 @@ import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
+import com.megrez.utils.PageTokenUtils;
 import com.megrez.vo.CursorLoad;
-import com.megrez.vo.analytics_service.VideoStatVO;
 import com.megrez.vo.video_info_service.VideoVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +57,10 @@ public class VideoInfoService {
             videoVO.setStatistics(videoStatById.getData().get(0));
         }
 
+        if (userId > 0) {
+
+        }
+
         return Result.success(video);
     }
 
@@ -67,15 +71,54 @@ public class VideoInfoService {
      * @param uid      当前操作用户ID
      * @return 包含视频元数据的集合
      */
-    public Result<List<Video>> getVideosInfoByUserId(Integer uid, Integer targetId) {
-        LambdaQueryWrapper<Video> wrapper = new LambdaQueryWrapper<Video>().eq(Video::getUploaderId, targetId);
+    public Result<CursorLoad<VideoVO>> getVideosInfoByUserId(Integer uid, Integer targetId, String cursor) throws Exception {
+
+        LambdaQueryWrapper<Video> wrapper = new LambdaQueryWrapper<Video>()
+                .eq(Video::getUploaderId, targetId)
+                .orderByDesc(Video::getCreatedTime)
+                .last("LIMIT 21");
+
+        if (cursor != null && !cursor.isEmpty()) {
+            VideoVO videoVO = PageTokenUtils.decryptState(cursor, VideoVO.class);
+            wrapper.le(Video::getCreatedTime, videoVO.getCreatedTime());
+            wrapper.ne(Video::getId, videoVO.getId());
+        }
 
         List<Video> videos = videoMapper.selectList(wrapper);
-        videos.forEach(e -> {
-            e.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + e.getCoverName());
-            e.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + e.getVideoFilename());
-        });
-        return Result.success(videos);
+
+        boolean hasMore = false;
+        cursor = null;
+        if (videos.size() > 20) {
+            hasMore = true;
+            videos = videos.subList(0, videos.size() - 1);
+        }
+
+        List<Integer> ids = videos.stream().map(Video::getId).toList();
+        // 查询统计信息
+        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(ids);
+        List<VideoStatistics> statisticsList;
+        if (videoStatById.isSuccess()) {
+            statisticsList = videoStatById.getData();
+        } else {
+            throw new Exception(videoStatById.getMsg());
+        }
+
+        Map<Integer, VideoStatistics> statisticsMap = statisticsList.stream().collect(Collectors.toMap(VideoStatistics::getVideoId, Function.identity()));
+
+        List<VideoVO> list = videos.stream().map(video -> {
+            VideoVO videoVO = new VideoVO();
+            BeanUtils.copyProperties(video, videoVO);
+            videoVO.setStatistics(statisticsMap.get(video.getId()));
+            videoVO.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + videoVO.getCoverName());
+            videoVO.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + videoVO.getVideoFilename());
+            return videoVO;
+        }).toList();
+
+        if (hasMore) {
+            cursor = PageTokenUtils.encryptState(list.get(list.size() - 1));
+        }
+
+        return Result.success(CursorLoad.of(list, hasMore, cursor));
     }
 
     public Result<CursorLoad<VideoVO>> getLikeVideosInfoByUserId(Integer userId, Integer tid, String cursor) {

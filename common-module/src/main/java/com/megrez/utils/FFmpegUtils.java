@@ -15,7 +15,7 @@ public class FFmpegUtils {
         String inputVideo = FilesServerPath.VIDEO_PATH + videoFilename + "\\video.mp4";
 
         // 截图输出路径
-        String outputImage = FilesServerPath.VIDEO_PATH + videoFilename + "\\thumbnail.jpg";
+        String outputImage = FilesServerPath.COVER_PATH + videoFilename + ".jpg";
 
         // 截图时间点
         String timestamp = "00:00:05";

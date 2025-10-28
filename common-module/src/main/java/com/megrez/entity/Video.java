@@ -142,4 +142,10 @@ public class Video {
     @TableLogic(value = "0", delval = "1")
     @JsonIgnore
     private Integer deleted;
+
+    /**
+     * 测试数据标记
+     */
+    @JsonIgnore
+    private Integer isTest;
 }

@@ -29,13 +29,13 @@ public class RecordService {
             wrapper.le(VideoLikes::getCreatedAt, videoLikes.getCreatedAt());
             wrapper.ne(VideoLikes::getId, videoLikes.getId());
         }
-        wrapper.last("LIMIT 3");
+        wrapper.last("LIMIT 21");
 
         List<VideoLikes> videoLikes = recordMapper.selectList(wrapper);
 
         boolean hasMore = false;
         cursor = null;
-        if (videoLikes.size() > 2) {
+        if (videoLikes.size() > 20) {
             videoLikes = videoLikes.subList(0, videoLikes.size() - 1);
             hasMore = true;
             cursor = PageTokenUtils.encryptState(videoLikes.get(videoLikes.size() - 1));

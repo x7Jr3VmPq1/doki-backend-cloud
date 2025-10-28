@@ -66,5 +66,5 @@ public class VideoComments {
 
     @Builder.Default
     @JsonIgnore
-    private Boolean isDeleted = false;      // 是否删除，默认false
+    private Boolean isDeleted = false;  // 是否删除，默认false
 }

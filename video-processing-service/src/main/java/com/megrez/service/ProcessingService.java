@@ -118,6 +118,7 @@ public class ProcessingService {
                 // 视频文件信息
                 .videoFilename(videoFilename)
                 .videoFormat(".mp4")
+                .coverName(videoFilename + ".jpg")
 
                 // 从元数据获取技术参数
                 .videoWidth(videoMeta.getWidth())
@@ -145,21 +146,10 @@ public class ProcessingService {
         try {
             long currentTime = Instant.now().toEpochMilli();
 
-            VideoStatistics statistics = VideoStatistics.builder()
-                    .videoId(videoId)
-                    .viewCount(0L)
-                    .likeCount(0L)
-                    .dislikeCount(0L)
-                    .commentCount(0L)
-                    .shareCount(0L)
-                    .favoriteCount(0L)
-                    .downloadCount(0L)
-                    .createdTime(currentTime)
-                    .updatedTime(currentTime)
-                    .deleted(0)
-                    .build();
+            VideoStatistics videoStatistics = new VideoStatistics();
+            videoStatistics.setVideoId(videoId);
 
-            int result = videoStatisticsMapper.insert(statistics);
+            int result = videoStatisticsMapper.insert(videoStatistics);
             if (result > 0) {
                 logger.info("视频统计记录创建成功，视频ID: {}", videoId);
             } else {

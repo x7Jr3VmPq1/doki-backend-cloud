@@ -17,5 +17,8 @@ public class VideoLikes {
     private Integer id;
     private Integer userId;
     private Integer videoId;
-    private Long createdAt;
+    @Builder.Default
+    private Long createdAt = System.currentTimeMillis();
+    @Builder.Default
+    private Integer isTest = 0;
 }
