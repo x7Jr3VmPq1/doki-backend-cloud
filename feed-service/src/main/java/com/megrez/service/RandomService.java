@@ -1,4 +1,6 @@
 package com.megrez.service;
+
+import com.megrez.constant.GatewayHttpPath;
 import com.megrez.entity.Video;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Result;
@@ -23,6 +25,11 @@ public class RandomService {
      */
     public Result<List<Video>> randomVideo() {
         List<Video> videos = videoMapper.getRandomVideo();
+
+        videos.forEach(video -> {
+            video.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + video.getVideoFilename());
+            video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
+        });
         return Result.success(videos);
     }
 }
