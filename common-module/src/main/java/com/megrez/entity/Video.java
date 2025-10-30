@@ -121,12 +121,14 @@ public class Video {
      * 创建时间戳
      * 视频记录创建的时间
      */
+    @JsonIgnore
     private Long createdTime;
 
     /**
      * 更新时间戳
      * 视频信息最后修改的时间
      */
+    @JsonIgnore
     private Long updatedTime;
 
 

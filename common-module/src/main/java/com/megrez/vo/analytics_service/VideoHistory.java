@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class VideoHistoryVO {
+public class VideoHistory {
     private Integer videoId;
-    private Double watchedTime;
+    private Long createdAt;
 }

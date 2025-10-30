@@ -10,8 +10,11 @@ import com.megrez.entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
+import com.megrez.utils.CollectionUtils;
 import com.megrez.utils.PageTokenUtils;
 import com.megrez.vo.CursorLoad;
+import com.megrez.vo.analytics_service.VideoHistory;
+import com.megrez.vo.analytics_service.VideoWatched;
 import com.megrez.vo.video_info_service.VideoVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,10 +167,57 @@ public class VideoInfoService {
 
         return Result.success(CursorLoad.of(list, hasMore, cursor));
     }
+
+    public Result<CursorLoad<VideoVO>> getHistoryInfoByUserId(Integer userId, Long cursor) {
+        // 1. 调用统计服务，获取用户的历史记录
+        Result<List<VideoHistory>> videoHistory = analyticsServiceClient.getVideoHistory(userId, cursor);
+        if (!videoHistory.isSuccess()) {
+            return Result.error(Response.UNKNOWN_WRONG);
+        }
+        // 2. 获取其中的视频ID
+        List<VideoHistory> videoHistories = videoHistory.getData();
+        List<Integer> videoIds = CollectionUtils.toList(videoHistories, VideoHistory::getVideoId);
+        // 3. 查询视频信息
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, videoIds));
+        // 4. 查询统计数据
+        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(videoIds);
+        // 5. 查询观看时长
+        Result<List<VideoWatched>> videoWatched = analyticsServiceClient.getVideoWatched(userId, videoIds);
+        if (!videoStatById.isSuccess() || !videoWatched.isSuccess()) {
+            return Result.error(Response.UNKNOWN_WRONG);
+        }
+        // 6. 组装数据
+        List<VideoStatistics> videoStatistics = videoStatById.getData();
+        List<VideoWatched> videoWatchedData = videoWatched.getData();
+        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
+        Map<Integer, VideoHistory> videoHistoryMap = CollectionUtils.toMap(videoHistories, VideoHistory::getVideoId);
+        Map<Integer, VideoStatistics> statisticsMap = CollectionUtils.toMap(videoStatistics, VideoStatistics::getVideoId);
+        Map<Integer, VideoWatched> videoWatchedMap = CollectionUtils.toMap(videoWatchedData, VideoWatched::getVideoId);
+        List<VideoVO> list = videoIds.stream().map(id -> {
+            VideoVO vo = new VideoVO();
+            Video video = videoMap.get(id);
+            VideoStatistics stat = statisticsMap.get(id);
+            VideoWatched watched = videoWatchedMap.get(id);
+            BeanUtils.copyProperties(video, vo);
+            vo.setStatistics(stat);
+            vo.setWatchedTime(watched.getTime());
+            vo.setWatchedAt(videoHistoryMap.get(id).getCreatedAt());
+            vo.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + vo.getVideoFilename());
+            vo.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + vo.getCoverName());
+            return vo;
+        }).toList();
+
+        boolean hasMore = false;
+        cursor = null;
+        if (list.size() > 20) {
+            hasMore = true;
+            list = list.subList(0, list.size() - 1);
+            cursor = list.get(list.size() - 1).getWatchedAt();
+        }
+        return Result.success(CursorLoad.of(list, hasMore, cursor == null ? null : cursor.toString()));
+    }
 //
 //    public Result<List<Video>> getFavoriteInfoByUserId(Integer userId, Integer targetId) {
 //    }
 //
-//    public Result<List<Video>> getHistoryInfoByUserId(Integer userId) {
-//    }
 }

@@ -1,6 +1,9 @@
 package com.megrez.redis;
 
-import com.megrez.vo.analytics_service.VideoHistoryVO;
+import com.megrez.entity.Video;
+import com.megrez.vo.analytics_service.VideoHistory;
+import com.megrez.vo.analytics_service.VideoWatched;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
@@ -35,17 +38,38 @@ public class AnalyticsRedisClient {
         redisTemplate.opsForHash().put(key, videoId, time);
     }
 
-    public List<VideoHistoryVO> getHistory(Integer userId) {
-        Map<Integer, Double> hashAsMap = getHashAsMap(KEY_USER_WATCHED + userId, Integer.class, Double.class);
+    /**
+     * 获取视频历史记录
+     *
+     * @param userId 用户ID
+     * @return 历史记录
+     */
+    public List<VideoHistory> getHistory(Integer userId, Double score) {
 
-        List<Integer> zSet = getZSet(KEY_USER_HISTORY + userId, 0, 10);
+        Map<Integer, Double> historyMap = getZSetAsMapByScore(KEY_USER_HISTORY + userId, Integer.class, 0, score, 20 + 1);
 
-        return zSet.stream().map(e -> {
-            VideoHistoryVO vo = new VideoHistoryVO();
-            vo.setVideoId(e);
-            vo.setWatchedTime(hashAsMap.get(e));
-            return vo;
-        }).toList();
+        ArrayList<VideoHistory> videoHistories = new ArrayList<>();
+        historyMap.forEach((key, value) -> {
+            videoHistories.add(new VideoHistory(key, value.longValue()));
+        });
+        return videoHistories;
+    }
+
+    /**
+     * 获取观看时长
+     *
+     * @param userId 用户ID
+     * @param vIds   视频ID集合
+     * @return 观看时长记录
+     */
+    public List<VideoWatched> getWatched(Integer userId, List<Integer> vIds) {
+        Map<Integer, Double> multiAsMap = getMultiAsMap(KEY_USER_WATCHED + userId, vIds, Integer.class, Double.class);
+        ArrayList<VideoWatched> watched = new ArrayList<>();
+        multiAsMap.forEach((key, value) -> {
+            VideoWatched videoWatched = new VideoWatched(key, value);
+            watched.add(videoWatched);
+        });
+        return watched;
     }
 
     public <K, V> Map<K, V> getHashAsMap(String redisKey, Class<K> keyClass, Class<V> valueClass) {
@@ -57,13 +81,41 @@ public class AnalyticsRedisClient {
         return result;
     }
 
-    public List<Integer> getZSet(String redisKey, long start, long end) {
-        Set<ZSetOperations.TypedTuple<Integer>> typedTuples = redisTemplate.opsForZSet().reverseRangeWithScores(redisKey, start, end);
-        if (typedTuples == null) {
-            return List.of();
+    public <K, V> Map<K, V> getMultiAsMap(String redisKey, List<K> hashKeys, Class<K> keyClass, Class<V> valueClass) {
+        // 获取多个 key 对应的值
+        List<Object> objects = redisTemplate.opsForHash().multiGet(redisKey, Arrays.asList(hashKeys.toArray()));
+
+        HashMap<K, V> kvHashMap = new HashMap<>();
+        for (int i = 0; i < hashKeys.size(); i++) {
+            Object value = objects.get(i);
+            if (value != null) {
+                kvHashMap.put(keyClass.cast(hashKeys.get(i)), valueClass.cast(value));
+            }
         }
-        return typedTuples.stream()
-                .map(ZSetOperations.TypedTuple::getValue)
-                .toList();
+        return kvHashMap;
     }
+
+
+    public <V> Map<V, Double> getZSetAsMapByScore(
+            String redisKey,
+            Class<V> valueClass,
+            double minScore,
+            double maxScore,
+            int limit) {
+
+        Set<ZSetOperations.TypedTuple<Integer>> raw =
+                redisTemplate.opsForZSet().reverseRangeByScoreWithScores(redisKey, minScore, maxScore - 0.1, 0, limit);
+
+        Map<V, Double> result = new LinkedHashMap<>();
+        if (raw != null) {
+            for (ZSetOperations.TypedTuple<Integer> tuple : raw) {
+                if (tuple.getValue() != null && tuple.getScore() != null) {
+                    result.put(valueClass.cast(tuple.getValue()), tuple.getScore());
+                }
+            }
+        }
+
+        return result;
+    }
+
 }

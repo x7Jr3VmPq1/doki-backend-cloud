@@ -79,16 +79,19 @@ public class VideoInfoController {
 //        return videoInfoService.getFavoriteInfoByUserId(userId, targetUid);
 //    }
 //
-//    /**
-//     * 获取用户的历史观看记录
-//     *
-//     * @param userId 用户ID
-//     * @return 历史记录集合
-//     */
-//    @GetMapping("/history")
-//    public Result<List<Video>> getHistoryInfoByUserId(@CurrentUser Integer userId) {
-//        log.info("获取用户历史记录信息：{}", userId);
-//        return videoInfoService.getHistoryInfoByUserId(userId);
-//    }
+
+    /**
+     * 获取用户的历史观看记录
+     *
+     * @param userId 用户ID
+     * @param cursor 游标，对于历史记录来说，只需提供时间即可。
+     * @return 历史记录集合
+     */
+    @GetMapping("/history")
+    public Result<CursorLoad<VideoVO>> getHistoryInfoByUserId(@CurrentUser Integer userId,
+                                                        @RequestParam(required = false) Long cursor) {
+        log.info("获取用户历史记录信息：{}", userId);
+        return videoInfoService.getHistoryInfoByUserId(userId, cursor);
+    }
 
 }

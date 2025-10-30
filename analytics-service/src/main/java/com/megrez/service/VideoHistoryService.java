@@ -2,8 +2,8 @@ package com.megrez.service;
 
 import com.megrez.redis.AnalyticsRedisClient;
 import com.megrez.result.Result;
-import com.megrez.utils.RedisUtils;
-import com.megrez.vo.analytics_service.VideoHistoryVO;
+import com.megrez.vo.analytics_service.VideoHistory;
+import com.megrez.vo.analytics_service.VideoWatched;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +22,11 @@ public class VideoHistoryService {
         return Result.success(null);
     }
 
-    public Result<List<VideoHistoryVO>> getVideoHistory(Integer userId) {
-        return Result.success(analyticsRedisClient.getHistory(userId));
+    public Result<List<VideoHistory>> getVideoHistory(Integer userId, Long cursor) {
+        return Result.success(analyticsRedisClient.getHistory(userId, cursor == null ? System.currentTimeMillis() : cursor.doubleValue()));
+    }
+
+    public Result<List<VideoWatched>> getVideoWatched(Integer userId, List<Integer> videoId) {
+        return Result.success(analyticsRedisClient.getWatched(userId, videoId));
     }
 }
