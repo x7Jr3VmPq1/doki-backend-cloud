@@ -38,7 +38,11 @@ public enum Response {
 
     // 评论服务错误
     COMMENT_NOT_EMPTY(50000, "评论不能为空"),
-    COMMENT_TOO_LONG(50001, "评论太长啦");
+    COMMENT_TOO_LONG(50001, "评论太长啦"),
+
+    //私信/通知服务错误
+    MESSAGE_CANT_CREATE(60000, "会话创建失败"),
+    CONVERSATION_NOT_FOUND(60001, "会话不存在");
 
     private final int code;
     private final String message;

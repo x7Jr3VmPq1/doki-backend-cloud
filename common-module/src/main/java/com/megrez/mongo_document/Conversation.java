@@ -24,7 +24,7 @@ public class Conversation {
 
     private DirectMessage lastMessage;
 
-    @JsonIgnore
+//    @JsonIgnore
     @Builder.Default
     private Map<Integer, Long> lastDeleteAt = Map.of();
 
