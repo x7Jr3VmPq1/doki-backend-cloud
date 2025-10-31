@@ -1,7 +1,7 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.megrez.entity.VideoLikes;
+import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.mapper.RecordMapper;
 import com.megrez.result.Result;
 import com.megrez.utils.PageTokenUtils;

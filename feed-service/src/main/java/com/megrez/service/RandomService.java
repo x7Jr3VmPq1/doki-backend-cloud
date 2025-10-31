@@ -1,7 +1,7 @@
 package com.megrez.service;
 
 import com.megrez.constant.GatewayHttpPath;
-import com.megrez.entity.Video;
+import com.megrez.mysql_entity.Video;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Result;
 import org.springframework.stereotype.Service;

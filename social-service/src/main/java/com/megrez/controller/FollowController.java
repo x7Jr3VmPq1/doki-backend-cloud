@@ -2,7 +2,7 @@ package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
 import com.megrez.dto.social_service.CheckFollowDTO;
-import com.megrez.entity.UserFollow;
+import com.megrez.mysql_entity.UserFollow;
 import com.megrez.result.Result;
 import com.megrez.service.FollowService;
 import org.slf4j.Logger;

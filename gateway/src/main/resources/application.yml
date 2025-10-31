@@ -69,6 +69,11 @@ spring:
             lb://social-service
           predicates:
             - Path=/social/**
+        - id: notification-dm-service # 私信/通知服务
+          uri:
+            lb://notification-dm-service
+          predicates:
+            - Path=/notify/**,/message/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

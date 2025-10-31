@@ -1,7 +1,7 @@
 package com.megrez.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.megrez.entity.VideoDraft;
+import com.megrez.mysql_entity.VideoDraft;
 import com.megrez.mapper.DraftMapper;
 import com.megrez.rabbit.exchange.VideoSubmitExchange;
 import com.megrez.result.Response;

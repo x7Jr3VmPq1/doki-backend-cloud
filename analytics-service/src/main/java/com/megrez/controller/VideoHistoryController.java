@@ -67,4 +67,13 @@ public class VideoHistoryController {
         log.info("查询观看时长，用户ID：{},视频ID：{}", userId, videoId);
         return videoHistoryService.getVideoWatched(userId, videoId);
     }
+
+    @DeleteMapping("/clear")
+    public Result<Void> clearVideoHistory(
+            @CurrentUser Integer userId,
+            @RequestParam(required = false) Integer close) {
+        log.info("清空历史记录，UID:{}", userId);
+        return videoHistoryService.clearVideoHistory(userId, close);
+
+    }
 }

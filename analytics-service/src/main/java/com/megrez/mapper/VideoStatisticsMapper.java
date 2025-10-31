@@ -1,7 +1,7 @@
 package com.megrez.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.VideoStatistics;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

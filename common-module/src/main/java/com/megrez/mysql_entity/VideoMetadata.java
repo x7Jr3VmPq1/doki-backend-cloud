@@ -1,4 +1,4 @@
-package com.megrez.entity;
+package com.megrez.mysql_entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

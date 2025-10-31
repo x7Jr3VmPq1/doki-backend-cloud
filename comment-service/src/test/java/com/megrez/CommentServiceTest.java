@@ -1,7 +1,7 @@
 package com.megrez;
 
 import com.megrez.dto.comment_service.VideoCommentDTO;
-import com.megrez.entity.VideoComments;
+import com.megrez.mongo_document.VideoComments;
 import com.megrez.service.CommentService;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

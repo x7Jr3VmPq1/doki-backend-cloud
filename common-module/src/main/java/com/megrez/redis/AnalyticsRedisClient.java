@@ -1,9 +1,7 @@
 package com.megrez.redis;
 
-import com.megrez.entity.Video;
 import com.megrez.vo.analytics_service.VideoHistory;
 import com.megrez.vo.analytics_service.VideoWatched;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
@@ -53,6 +51,10 @@ public class AnalyticsRedisClient {
             videoHistories.add(new VideoHistory(key, value.longValue()));
         });
         return videoHistories;
+    }
+
+    public void clearHistory(Integer userId) {
+        redisTemplate.delete(KEY_USER_HISTORY + userId);
     }
 
     /**

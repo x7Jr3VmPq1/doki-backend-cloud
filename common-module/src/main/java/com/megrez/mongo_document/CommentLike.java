@@ -1,8 +1,5 @@
-package com.megrez.entity;
+package com.megrez.mongo_document;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,10 +19,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class CommentLike {
     @Id
     private String id;              // 主键ID
+
     private String commentId;       // 评论ID
+
     private Integer userId;         // 用户ID
+
     @Builder.Default
     private Long createdAt = System.currentTimeMillis(); // 创建时间
+
     @JsonIgnore
     @Builder.Default
     private Boolean isDeleted = false;    // 是否逻辑删除

@@ -1,6 +1,6 @@
 package com.megrez.controller;
 
-import com.megrez.entity.Video;
+import com.megrez.mysql_entity.Video;
 import com.megrez.result.Result;
 import com.megrez.service.RandomService;
 import org.springframework.web.bind.annotation.GetMapping;

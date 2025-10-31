@@ -1,7 +1,7 @@
 package com.megrez.client;
 
 import com.megrez.dto.social_service.CheckFollowDTO;
-import com.megrez.entity.UserFollow;
+import com.megrez.mysql_entity.UserFollow;
 import com.megrez.result.Result;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;

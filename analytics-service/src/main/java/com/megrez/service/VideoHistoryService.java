@@ -29,4 +29,9 @@ public class VideoHistoryService {
     public Result<List<VideoWatched>> getVideoWatched(Integer userId, List<Integer> videoId) {
         return Result.success(analyticsRedisClient.getWatched(userId, videoId));
     }
+
+    public Result<Void> clearVideoHistory(Integer userId, Integer close) {
+        analyticsRedisClient.clearHistory(userId);
+        return Result.success(null);
+    }
 }

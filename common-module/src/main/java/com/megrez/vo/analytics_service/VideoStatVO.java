@@ -1,6 +1,6 @@
 package com.megrez.vo.analytics_service;
 
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.VideoStatistics;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

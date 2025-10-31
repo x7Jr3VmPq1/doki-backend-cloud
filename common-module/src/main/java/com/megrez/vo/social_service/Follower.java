@@ -1,7 +1,7 @@
 package com.megrez.vo.social_service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.megrez.entity.User;
+import com.megrez.mysql_entity.User;
 import lombok.*;
 
 @Data

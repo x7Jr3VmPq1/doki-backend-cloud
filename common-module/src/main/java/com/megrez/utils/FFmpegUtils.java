@@ -2,7 +2,7 @@ package com.megrez.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.megrez.entity.VideoMetadata;
+import com.megrez.mysql_entity.VideoMetadata;
 import com.megrez.path.FilesServerPath;
 
 import java.io.IOException;

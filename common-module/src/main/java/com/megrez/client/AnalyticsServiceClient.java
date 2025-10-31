@@ -1,10 +1,8 @@
 package com.megrez.client;
 
-import com.megrez.entity.Video;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.result.Result;
 import com.megrez.vo.analytics_service.VideoHistory;
-import com.megrez.vo.analytics_service.VideoStatVO;
 import com.megrez.vo.analytics_service.VideoWatched;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

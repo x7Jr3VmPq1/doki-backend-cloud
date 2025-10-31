@@ -2,7 +2,7 @@ package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.megrez.entity.UserFollow;
+import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mapper.UserFollowMapper;
 import com.megrez.rabbit.exchange.SocialFollowExchange;
 import com.megrez.result.Response;

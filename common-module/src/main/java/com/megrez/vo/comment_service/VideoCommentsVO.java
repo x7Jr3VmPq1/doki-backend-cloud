@@ -1,7 +1,7 @@
 package com.megrez.vo.comment_service;
 
-import com.megrez.entity.User;
-import com.megrez.entity.VideoComments;
+import com.megrez.mysql_entity.User;
+import com.megrez.mongo_document.VideoComments;
 import lombok.*;
 
 @Data

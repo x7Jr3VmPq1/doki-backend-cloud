@@ -1,6 +1,6 @@
 package com.megrez.vo.user_service;
 
-import com.megrez.entity.User;
+import com.megrez.mysql_entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,8 +1,8 @@
 package com.megrez;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.megrez.entity.User;
-import com.megrez.entity.UserFollow;
+import com.megrez.mysql_entity.User;
+import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mapper.UserFollowMapper;
 import com.megrez.mapper.UserMapper;
 import org.junit.jupiter.api.Test;

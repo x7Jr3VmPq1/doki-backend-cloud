@@ -1,6 +1,6 @@
 package com.megrez.client;
 
-import com.megrez.entity.User;
+import com.megrez.mysql_entity.User;
 import com.megrez.result.Result;
 import com.megrez.vo.user_service.UsersVO;
 import org.springframework.cloud.openfeign.FeignClient;

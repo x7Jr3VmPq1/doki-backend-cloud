@@ -1,7 +1,6 @@
 package com.megrez.dto.social_service;
 
-import com.megrez.entity.UserFollow;
-import com.megrez.vo.social_service.Follower;
+import com.megrez.mysql_entity.UserFollow;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

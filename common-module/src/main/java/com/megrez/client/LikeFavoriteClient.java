@@ -1,6 +1,6 @@
 package com.megrez.client;
 
-import com.megrez.entity.VideoLikes;
+import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.result.Result;
 import com.megrez.vo.CursorLoad;
 import org.springframework.cloud.openfeign.FeignClient;

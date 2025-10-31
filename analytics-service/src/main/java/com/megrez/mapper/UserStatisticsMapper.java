@@ -1,7 +1,7 @@
 package com.megrez.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.megrez.entity.UserStatistics;
+import com.megrez.mysql_entity.UserStatistics;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

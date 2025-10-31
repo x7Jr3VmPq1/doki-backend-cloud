@@ -1,7 +1,7 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.rabbit.message.VideoLikeMessage;
 import com.megrez.rabbit.exchange.VideoLikeExchange;

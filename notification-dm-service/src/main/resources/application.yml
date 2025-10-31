@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: notification-dm-service  # 应用名
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 30321 # 端口号
+

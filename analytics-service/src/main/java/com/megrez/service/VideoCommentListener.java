@@ -1,8 +1,8 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.megrez.entity.VideoComments;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mongo_document.VideoComments;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.rabbit.message.CommentAddMessage;
 import com.megrez.rabbit.message.CommentDelMessage;

@@ -1,8 +1,8 @@
 package com.megrez;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.megrez.entity.Video;
-import com.megrez.entity.VideoLikes;
+import com.megrez.mysql_entity.Video;
+import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.mapper.LikeMapper;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

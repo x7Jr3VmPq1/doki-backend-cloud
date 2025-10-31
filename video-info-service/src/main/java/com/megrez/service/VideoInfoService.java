@@ -4,9 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.AnalyticsServiceClient;
 import com.megrez.client.LikeFavoriteClient;
 import com.megrez.constant.GatewayHttpPath;
-import com.megrez.entity.Video;
-import com.megrez.entity.VideoLikes;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.Video;
+import com.megrez.mysql_entity.VideoLikes;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
@@ -78,16 +78,21 @@ public class VideoInfoService {
 
         LambdaQueryWrapper<Video> wrapper = new LambdaQueryWrapper<Video>()
                 .eq(Video::getUploaderId, targetId)
-                .orderByDesc(Video::getCreatedTime)
+                .orderByDesc(Video::getPublishTime)
                 .last("LIMIT 21");
 
         if (cursor != null && !cursor.isEmpty()) {
             VideoVO videoVO = PageTokenUtils.decryptState(cursor, VideoVO.class);
-            wrapper.le(Video::getCreatedTime, videoVO.getCreatedTime());
+            wrapper.le(Video::getPublishTime, videoVO.getPublishTime());
             wrapper.ne(Video::getId, videoVO.getId());
         }
 
         List<Video> videos = videoMapper.selectList(wrapper);
+
+        if (videos.isEmpty()) {
+            return Result.success(CursorLoad.empty());
+        }
+
 
         boolean hasMore = false;
         cursor = null;
@@ -108,9 +113,11 @@ public class VideoInfoService {
 
         Map<Integer, VideoStatistics> statisticsMap = statisticsList.stream().collect(Collectors.toMap(VideoStatistics::getVideoId, Function.identity()));
 
+
         List<VideoVO> list = videos.stream().map(video -> {
             VideoVO videoVO = new VideoVO();
             BeanUtils.copyProperties(video, videoVO);
+            log.warn("{}", video);
             videoVO.setStatistics(statisticsMap.get(video.getId()));
             videoVO.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + videoVO.getCoverName());
             videoVO.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + videoVO.getVideoFilename());
@@ -120,7 +127,6 @@ public class VideoInfoService {
         if (hasMore) {
             cursor = PageTokenUtils.encryptState(list.get(list.size() - 1));
         }
-
         return Result.success(CursorLoad.of(list, hasMore, cursor));
     }
 
@@ -176,6 +182,9 @@ public class VideoInfoService {
         }
         // 2. 获取其中的视频ID
         List<VideoHistory> videoHistories = videoHistory.getData();
+        if (videoHistories.isEmpty()) {
+            return Result.success(CursorLoad.empty());
+        }
         List<Integer> videoIds = CollectionUtils.toList(videoHistories, VideoHistory::getVideoId);
         // 3. 查询视频信息
         List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, videoIds));

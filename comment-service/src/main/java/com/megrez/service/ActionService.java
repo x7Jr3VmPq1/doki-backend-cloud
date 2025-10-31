@@ -1,7 +1,7 @@
 package com.megrez.service;
 
-import com.megrez.entity.CommentLike;
-import com.megrez.entity.VideoComments;
+import com.megrez.mongo_document.CommentLike;
+import com.megrez.mongo_document.VideoComments;
 import com.megrez.rabbit.message.CommentLikeMessage;
 import com.megrez.rabbit.exchange.CommentLikeExchange;
 import com.megrez.result.Result;

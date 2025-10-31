@@ -1,6 +1,6 @@
 package com.megrez.utils;
 
-import com.megrez.entity.User;
+import com.megrez.mysql_entity.User;
 
 public class Validator {
 

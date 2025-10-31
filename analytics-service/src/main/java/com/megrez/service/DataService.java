@@ -2,16 +2,14 @@ package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.LikeFavoriteClient;
-import com.megrez.entity.UserStatistics;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.UserStatistics;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.UserStatisticsMapper;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
-import com.megrez.vo.analytics_service.VideoStatVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

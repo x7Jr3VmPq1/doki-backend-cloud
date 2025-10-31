@@ -1,6 +1,6 @@
 package com.megrez.service;
 
-import com.megrez.entity.VideoDraft;
+import com.megrez.mysql_entity.VideoDraft;
 import com.megrez.mapper.DraftMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;

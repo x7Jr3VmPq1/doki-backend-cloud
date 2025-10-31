@@ -1,9 +1,9 @@
 package com.megrez.service;
 
-import com.megrez.entity.Video;
-import com.megrez.entity.VideoDraft;
-import com.megrez.entity.VideoMetadata;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.Video;
+import com.megrez.mysql_entity.VideoDraft;
+import com.megrez.mysql_entity.VideoMetadata;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.rabbit.exchange.VideoSubmitExchange;

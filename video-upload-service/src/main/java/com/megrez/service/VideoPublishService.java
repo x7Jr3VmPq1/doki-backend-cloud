@@ -1,6 +1,6 @@
 package com.megrez.service;
 
-import com.megrez.entity.Video;
+import com.megrez.mysql_entity.Video;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.rabbit.exchange.VideoPublishedExchange;
 import com.megrez.rabbit.exchange.VideoSubmitExchange;

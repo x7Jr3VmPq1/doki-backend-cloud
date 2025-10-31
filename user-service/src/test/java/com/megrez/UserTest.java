@@ -1,8 +1,7 @@
 package com.megrez;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.megrez.entity.User;
+import com.megrez.mysql_entity.User;
 import com.megrez.mapper.UserMapper;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

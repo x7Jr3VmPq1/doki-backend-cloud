@@ -2,7 +2,7 @@ package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
 import com.megrez.dto.comment_service.VideoCommentDTO;
-import com.megrez.entity.VideoComments;
+import com.megrez.mongo_document.VideoComments;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.CommentService;

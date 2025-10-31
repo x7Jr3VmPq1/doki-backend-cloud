@@ -1,12 +1,11 @@
 package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
-import com.megrez.entity.UserStatistics;
-import com.megrez.entity.VideoStatistics;
+import com.megrez.mysql_entity.UserStatistics;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.DataService;
-import com.megrez.vo.analytics_service.VideoStatVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;

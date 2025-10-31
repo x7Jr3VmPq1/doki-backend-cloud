@@ -1,7 +1,7 @@
 package com.megrez.service;
 
-import com.megrez.entity.User;
-import com.megrez.entity.UserStatistics;
+import com.megrez.mysql_entity.User;
+import com.megrez.mysql_entity.UserStatistics;
 import com.megrez.mapper.UserMapper;
 import com.megrez.mapper.UserStatisticsMapper;
 import com.megrez.result.Response;

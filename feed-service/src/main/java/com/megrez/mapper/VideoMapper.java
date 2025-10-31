@@ -1,7 +1,7 @@
 package com.megrez.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.megrez.entity.Video;
+import com.megrez.mysql_entity.Video;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
