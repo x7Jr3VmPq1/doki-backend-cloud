@@ -2,7 +2,9 @@ package com.megrez;
 
 import com.megrez.dto.comment_service.VideoCommentDTO;
 import com.megrez.mongo_document.VideoComments;
+import com.megrez.rabbit.exchange.CommentLikeExchange;
 import com.megrez.service.CommentService;
+import com.megrez.utils.RabbitMQUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,8 @@ public class CommentServiceTest {
     @Autowired
     private CommentService commentService;
 
+    @Autowired
+    private RabbitMQUtils rabbitMQUtils;
 
     @Test
     public void updateColumn() {
@@ -45,6 +49,13 @@ public class CommentServiceTest {
             commentService.addComment(10001, videoCommentDTO);
         }
 
+    }
+
+    @Test
+    public void testQueue() {
+        while (true) {
+            rabbitMQUtils.sendMessage(CommentLikeExchange.FANOUT_EXCHANGE_COMMENT_LIKE, "", "");
+        }
     }
 
 }

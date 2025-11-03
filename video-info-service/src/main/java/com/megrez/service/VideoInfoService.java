@@ -225,6 +225,22 @@ public class VideoInfoService {
         }
         return Result.success(CursorLoad.of(list, hasMore, cursor == null ? null : cursor.toString()));
     }
+
+    // 批量查询视频信息
+    public Result<List<Video>> getVideoInfoByIds(List<Integer> vid) {
+        if (vid.isEmpty()) {
+            return Result.success(List.of());
+        }
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, vid));
+
+        // 转换视频播放链接和封面图URL
+        videos.forEach(video -> {
+            video.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + video.getVideoFilename());
+            video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
+        });
+
+        return Result.success(videos);
+    }
 //
 //    public Result<List<Video>> getFavoriteInfoByUserId(Integer userId, Integer targetId) {
 //    }

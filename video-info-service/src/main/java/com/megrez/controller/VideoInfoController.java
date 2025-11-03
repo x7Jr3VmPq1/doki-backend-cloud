@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/video/info")
 public class VideoInfoController {
@@ -34,6 +36,18 @@ public class VideoInfoController {
     public Result<Video> getVideoInfoById(@CurrentUser(required = false) Integer userId, @RequestParam Integer videoId) {
         log.info("查询视频信息ID：{}", videoId);
         return videoInfoService.getVideoInfo(userId, videoId);
+    }
+
+    /**
+     * 根据视频id批量获取视频元数据
+     *
+     * @param vid 视频id集合
+     * @return 视频元数据
+     */
+    @GetMapping("/multiGet")
+    Result<List<Video>> getVideoInfoByIds(@RequestParam("vid") List<Integer> vid) {
+        log.info("批量查询视频信息ID：{}", vid);
+        return videoInfoService.getVideoInfoByIds(vid);
     }
 
     /**
@@ -87,7 +101,7 @@ public class VideoInfoController {
      */
     @GetMapping("/history")
     public Result<CursorLoad<VideoVO>> getHistoryInfoByUserId(@CurrentUser Integer userId,
-                                                        @RequestParam(required = false) Long cursor) {
+                                                              @RequestParam(required = false) Long cursor) {
         log.info("获取用户历史记录信息：{}", userId);
         return videoInfoService.getHistoryInfoByUserId(userId, cursor);
     }

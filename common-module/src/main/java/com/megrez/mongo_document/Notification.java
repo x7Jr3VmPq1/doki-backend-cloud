@@ -21,8 +21,10 @@ public class Notification {
     private Integer type; // 1.关注 2.点赞视频 3.点赞评论 4.视频评论 5.评论回复
     // 通知的具体内容（如果是评论）
     private String content;
-    // 触发通知的源头ID，比如视频ID或者评论ID等
-    private String sourceId;
+    // 触发通知的视频ID
+    private Integer sourceVideoId;
+    // 触发通知的评论ID
+    private String sourceCommentId;
     // 操作者用户ID
     private Integer operatorId;
     // 通知分组键，用于合并通知，格式是：userId-type-sourceId，只合并点赞和关注。

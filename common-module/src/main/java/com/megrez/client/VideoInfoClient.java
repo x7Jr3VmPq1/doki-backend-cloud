@@ -6,6 +6,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @FeignClient(name = "video-info-service", path = "/video/info")
 public interface VideoInfoClient {
 
@@ -17,4 +19,13 @@ public interface VideoInfoClient {
      */
     @GetMapping
     Result<Video> getVideoInfoById(@RequestParam("videoId") Integer videoId);
+
+    /**
+     * 根据视频id集合批量获取视频元数据
+     *
+     * @param vid id集合
+     * @return 视频元数据列表
+     */
+    @GetMapping("/multiGet")
+    Result<List<Video>> getVideoInfoByIds(@RequestParam("vid") List<Integer> vid);
 }
