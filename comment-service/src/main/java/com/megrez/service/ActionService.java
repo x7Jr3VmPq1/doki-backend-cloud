@@ -77,4 +77,56 @@ public class ActionService {
         // 返回结果
         return Result.success(null);
     }
+
+    public Result<Void> likeV2(Integer userId, String commentId, Integer videoId, Integer commentSender, String content) {
+        // 1. 先查询是否存在这个评论
+        boolean existsComment = mongoTemplate.exists(
+                new Query(
+                        Criteria.where("id").is(commentId)
+                                .and("isDeleted").ne(true)
+                ), VideoComments.class
+        );
+        // 2.如果存在，查询是否存在点赞记录
+        int type = 0; // 类型：1 点赞 0 取消点赞
+        if (existsComment) {
+            // 构建查询条件
+            Query query = new Query(
+                    Criteria.where("userId").is(userId)
+                            .and("commentId").is(commentId)
+            );
+            boolean existsRecord = mongoTemplate.exists(query, CommentLike.class);
+            // 3. 存在，删除记录
+            if (existsRecord) {
+                mongoTemplate.remove(query, CommentLike.class);
+            } else {
+                // 不存在，插入点赞记录
+                mongoTemplate.insert(
+                        CommentLike.builder()
+                                .commentId(commentId)
+                                .userId(userId).build()
+                );
+                type = 1;
+            }
+            // 4. 更新点赞数
+            Query query1 = new Query(Criteria.where("_id").is(commentId));
+            Update update = new Update().inc("likeCount", type == 1 ? 1 : -1);
+            mongoTemplate.updateFirst(query1, update, VideoComments.class);
+
+            // 5. 发送消息
+            CommentLikeMessage message = CommentLikeMessage.builder()
+                    .type(type)
+                    .commentId(commentId)
+                    .userId(userId)
+                    .videoId(videoId)
+                    .commentSender(commentSender)
+                    .content(content)
+                    .build();
+            rabbitMQUtils.sendMessage(
+                    CommentLikeExchange.FANOUT_EXCHANGE_COMMENT_LIKE,
+                    null,
+                    JSONUtils.toJSON(message));
+        }
+        // 返回结果
+        return Result.success(null);
+    }
 }

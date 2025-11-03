@@ -32,9 +32,30 @@ public class ActionController {
      * @param commentId 评论id
      * @return 操作结果
      */
+    @Deprecated
     @GetMapping("/like")
     public Result<Void> like(@CurrentUser Integer userId, @RequestParam String commentId) {
         log.info("用户ID：{} 点赞了评论 ID：{}", userId, commentId);
         return actionService.like(userId, commentId);
+    }
+
+    /**
+     * 评论点赞接口  v2.0
+     *
+     * @param userId        用户id
+     * @param commentId     评论id
+     * @param videoId       视频id
+     * @param commentSender 评论发送者id
+     * @param content       评论内容
+     * @return 操作结果
+     */
+    @GetMapping("/like/v2")
+    public Result<Void> likeV2(@CurrentUser Integer userId,
+                               @RequestParam String commentId,
+                               @RequestParam Integer videoId,
+                               @RequestParam Integer commentSender,
+                               @RequestParam String content) {
+        log.info("点赞评论：{} {} {} {} {}", userId, commentId, videoId, commentSender, content);
+        return actionService.likeV2(userId, commentId, videoId, commentSender, content);
     }
 }

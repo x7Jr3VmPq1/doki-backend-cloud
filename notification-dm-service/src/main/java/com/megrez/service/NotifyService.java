@@ -18,6 +18,7 @@ import com.megrez.result.Result;
 import com.megrez.utils.CollectionUtils;
 import com.megrez.utils.JSONUtils;
 import com.megrez.vo.notification_dm_service.NotificationVO;
+import com.mongodb.client.MongoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -42,12 +43,14 @@ public class NotifyService {
     private final VideoInfoClient videoInfoClient;
     private final NotifyAndDMRedisClient redisClient;
     private final UserServiceClient userServiceClient;
+    private final MongoClient mongo;
 
-    public NotifyService(MongoTemplate mongoTemplate, VideoInfoClient videoInfoClient, NotifyAndDMRedisClient redisClient, UserServiceClient userServiceClient) {
+    public NotifyService(MongoTemplate mongoTemplate, VideoInfoClient videoInfoClient, NotifyAndDMRedisClient redisClient, UserServiceClient userServiceClient, MongoClient mongo) {
         this.mongoTemplate = mongoTemplate;
         this.videoInfoClient = videoInfoClient;
         this.redisClient = redisClient;
         this.userServiceClient = userServiceClient;
+        this.mongo = mongo;
     }
 
 
@@ -160,7 +163,18 @@ public class NotifyService {
 
     @RabbitListener(queues = CommentLikeExchange.QUEUE_COMMENT_LIKE_NOTIFICATION)
     public void insertByCommentLike(String message) {
-//        CommentLikeMessage commentLikeMessage = JSONUtils.fromJSON(message, CommentLikeMessage.class);
-        return;
+        CommentLikeMessage commentLikeMessage = JSONUtils.fromJSON(message, CommentLikeMessage.class);
+
+        //
+        Integer targetUserId = commentLikeMessage.getCommentSender();
+        Notification notification = Notification.builder()
+                .userId(targetUserId)
+                .content(commentLikeMessage.getContent())
+                .operatorId(commentLikeMessage.getUserId())
+                .type(3)
+                .sourceCommentId(commentLikeMessage.getCommentId())
+                .sourceVideoId(commentLikeMessage.getVideoId())
+                .groupKey(targetUserId + "-3-" + commentLikeMessage.getCommentId()).build();
+        mongoTemplate.insert(notification);
     }
 }
