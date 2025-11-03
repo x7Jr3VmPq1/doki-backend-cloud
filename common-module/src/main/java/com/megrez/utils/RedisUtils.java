@@ -36,7 +36,7 @@ public class RedisUtils {
      * @return 如果 key 已存在返回原 value，否则返回 null
      */
     public String setIfAbsentReturnExisting(String key, String value, long timeout, TimeUnit unit) {
-        Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(key, value);
+        Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
         if (success != null && success) {
             // key 不存在，设置成功
             return null;

@@ -122,14 +122,14 @@ public class Video {
      * 视频记录创建的时间
      */
     @JsonIgnore
-    private Long createdTime;
+    private Long createdTime = System.currentTimeMillis();
 
     /**
      * 更新时间戳
      * 视频信息最后修改的时间
      */
     @JsonIgnore
-    private Long updatedTime;
+    private Long updatedTime = System.currentTimeMillis();
 
 
     /**
@@ -143,7 +143,7 @@ public class Video {
      */
     @TableLogic(value = "0", delval = "1")
     @JsonIgnore
-    private Integer deleted;
+    private Integer deleted = 0;
 
     /**
      * 测试数据标记

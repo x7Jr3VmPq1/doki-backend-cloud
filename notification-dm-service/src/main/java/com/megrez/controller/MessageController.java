@@ -38,8 +38,8 @@ public class MessageController {
      * @return 成功创建的会话对象
      */
     @GetMapping("/create")
-    public Result<Conversation> createConversation(@CurrentUser Integer userId,
-                                                   @RequestParam Integer tid) {
+    public Result<ConversationVO> createConversation(@CurrentUser Integer userId,
+                                                     @RequestParam Integer tid) {
 
         if (userId.equals(tid)) {
             return Result.error(Response.MESSAGE_CANT_CREATE);
@@ -59,7 +59,7 @@ public class MessageController {
      */
     @PostMapping("/send")
     public Result<MessageVO> send(@CurrentUser Integer userId,
-                                      @RequestBody DirectMessage message) {
+                                  @RequestBody DirectMessage message) {
         log.info("用户ID：{}向会话发送消息：{}", userId, message);
         if (!userId.equals(message.getSenderId())) {
             return Result.error(Response.FORBIDDEN);
@@ -79,6 +79,13 @@ public class MessageController {
         return messageService.getConversationsForUser(userId);
     }
 
+    /**
+     * 获取会话消息列表
+     *
+     * @param userId 用户id
+     * @param cid    会话id
+     * @return 消息列表
+     */
     @GetMapping("/getMessage")
     public Result<List<MessageVO>> getMessages(@CurrentUser Integer userId,
                                                String cid) {
@@ -86,11 +93,43 @@ public class MessageController {
         return messageService.getMessagesForConversation(userId, cid);
     }
 
+    /**
+     * 删除会话
+     *
+     * @param userId 用户id
+     * @param cid    会话id
+     * @return null
+     */
     @DeleteMapping("/delete")
     public Result<Void> deleteConversation(@CurrentUser Integer userId,
                                            String cid) {
         log.info("用户ID：{}删除会话，会话ID：{}", userId, cid);
         return messageService.deleteConversationForUser(cid, userId);
+    }
+
+    /**
+     * 获取用户私信未读数
+     *
+     * @param userId 用户id
+     * @return 未读数
+     */
+    @GetMapping("/unread")
+    public Result<Integer> getUnreadCount(@CurrentUser Integer userId) {
+        return messageService.getUnreadCount(userId);
+    }
+
+    /**
+     * 清空未读消息数
+     *
+     * @param userId 用户id
+     * @param cid    会话id，不传入则清空所有未读数。
+     * @return null
+     */
+    @DeleteMapping("/unread")
+    public Result<Void> clearUnreadCount(@CurrentUser Integer userId,
+                                         @RequestParam(value = "cid", required = false) String cid) {
+        log.info("用户id：{} 清空未读数,会话id{}", userId, cid);
+        return messageService.clearUnreadCount(userId, cid);
     }
 
 }

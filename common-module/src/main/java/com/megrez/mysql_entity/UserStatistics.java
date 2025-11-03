@@ -15,9 +15,9 @@ public class UserStatistics {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
     private Integer userId;
-    private Integer followingCount;
-    private Integer followerCount;
-    private Integer likeCount;
-    private long createdAt;
-    private long updatedAt;
+    private Integer followingCount = 0;
+    private Integer followerCount = 0;
+    private Integer likeCount = 0;
+    private long createdAt = System.currentTimeMillis();
+    private long updatedAt = System.currentTimeMillis();
 }

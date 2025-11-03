@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class ConversationVO extends Conversation {
-    private User userinfo;
+    private User userinfo; // 对方的用户信息
+    private Integer unread;// 未读数量
 }
