@@ -74,6 +74,11 @@ spring:
             lb://notification-dm-service
           predicates:
             - Path=/notify/**,/message/**
+        - id: search-service # 搜索服务
+          uri:
+            lb://search-service
+          predicates:
+            - Path=/search/**
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG

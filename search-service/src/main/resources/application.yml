@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: search-service  # 应用名
+  config:
+    import: nacos:common-config
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+server:
+  port: 30999 # 端口号
+

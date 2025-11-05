@@ -5,6 +5,8 @@ import com.megrez.mongo_document.VideoComments;
 import com.megrez.rabbit.exchange.CommentLikeExchange;
 import com.megrez.service.CommentService;
 import com.megrez.utils.RabbitMQUtils;
+import io.github.pigmesh.ai.deepseek.core.DeepSeekClient;
+import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionResponse;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import reactor.core.publisher.Flux;
 
 
 @SpringBootTest
@@ -28,6 +31,9 @@ public class CommentServiceTest {
 
     @Autowired
     private RabbitMQUtils rabbitMQUtils;
+
+    @Autowired
+    private DeepSeekClient deepSeekClient;
 
     @Test
     public void updateColumn() {
@@ -57,5 +63,8 @@ public class CommentServiceTest {
             rabbitMQUtils.sendMessage(CommentLikeExchange.FANOUT_EXCHANGE_COMMENT_LIKE, "", "");
         }
     }
+
+
+
 
 }

@@ -6,7 +6,7 @@ Doki是一个基于微服务架构的短视频社交平台，类似于抖音/Tik
 
 ## 技术栈
 
-- **框架**: Spring Boot 3.1.12 + Spring Cloud 2022.0.4
+  - **框架**: Spring Boot 3.1.12 + Spring Cloud 2022.0.4
 - **服务发现**: Nacos
 - **数据库**: MyBatis Plus
 - **消息队列**: RabbitMQ
