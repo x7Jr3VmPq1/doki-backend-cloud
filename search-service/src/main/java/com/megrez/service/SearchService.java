@@ -1,9 +1,11 @@
 package com.megrez.service;
 
+import co.elastic.clients.elasticsearch.core.search.Suggester;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.AnalyticsServiceClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.client.VideoInfoClient;
+import com.megrez.es_document.SearchSuggestion;
 import com.megrez.es_document.VideoESDocument;
 import com.megrez.mapper.SearchHistoryMapper;
 import com.megrez.mysql_entity.SearchHistory;
@@ -15,7 +17,9 @@ import com.megrez.utils.CollectionUtils;
 import com.megrez.vo.search_service.SearchVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -56,7 +60,6 @@ public class SearchService {
     }
 
     public Result<List<SearchVO>> search(Integer userId, String keyword) {
-
         Query query = new NativeQueryBuilder()
                 .withQuery(q -> q
                         .multiMatch(mm -> mm
@@ -122,7 +125,8 @@ public class SearchService {
             return new SearchVO(video, user, videoStatistics, highlightedTitle);
         }).toList();
 
-
         return Result.success(list);
     }
+
+
 }
