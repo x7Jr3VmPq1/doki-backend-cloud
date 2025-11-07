@@ -58,14 +58,14 @@ public class XiaoMeng {
                     }
                     return true;
                 })
-                .doOnError(err -> log.error("❌ Chat出错: ", err))
+                .doOnError(err -> log.error("API调用错误: ", err))
                 .doOnComplete(() -> {
                     // 在完成时分析结果
                     Pattern pattern = Pattern.compile("\\[[^]]+]");
                     Matcher matcher = pattern.matcher(collector.toString());
                     if (matcher.find()) {
                         String matched = matcher.group();
-                        log.info("✅ 收集完成，提取结果: {}", matched);
+                        log.info("收集完成，提取结果: {}", matched);
                     }
                     log.info("AI回答：{}", collector);
                 });

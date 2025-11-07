@@ -1,11 +1,11 @@
 package com.megrez.service;
 
-import co.elastic.clients.elasticsearch.core.search.Suggester;
+import co.elastic.clients.elasticsearch._types.query_dsl.PrefixQuery;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.AnalyticsServiceClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.client.VideoInfoClient;
-import com.megrez.es_document.SearchSuggestion;
+import com.megrez.es_document.ESSearchHistory;
 import com.megrez.es_document.VideoESDocument;
 import com.megrez.mapper.SearchHistoryMapper;
 import com.megrez.mysql_entity.SearchHistory;
@@ -15,9 +15,9 @@ import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.result.Result;
 import com.megrez.utils.CollectionUtils;
 import com.megrez.vo.search_service.SearchVO;
+import com.megrez.vo.user_service.UsersVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -51,12 +51,38 @@ public class SearchService {
         this.analyticsServiceClient = analyticsServiceClient;
     }
 
+    /**
+     * 获取前十的热搜
+     *
+     * @return 热搜列表
+     */
     public Result<List<SearchHistory>> getSearchHistory() {
         // 只要前十个。
         LambdaQueryWrapper<SearchHistory> queryWrapper = new LambdaQueryWrapper<SearchHistory>()
                 .orderByDesc(SearchHistory::getCount)
                 .last("LIMIT 10");
         return Result.success(mapper.selectList(queryWrapper));
+    }
+
+
+    /**
+     * 获取搜索补全建议
+     *
+     * @param pre 前缀
+     * @return 补全列表
+     */
+    public Result<List<ESSearchHistory>> getSuggestion(String pre) {
+        Query query = new NativeQueryBuilder()
+                .withQuery(q -> q.match(m -> m
+                        .query(pre)
+                        .field("word")
+                ))
+                .build();
+
+        SearchHits<ESSearchHistory> result = operations.search(query, ESSearchHistory.class);
+        List<ESSearchHistory> list = result.stream().map(SearchHit::getContent).toList();
+
+        return Result.success(list);
     }
 
     public Result<List<SearchVO>> search(Integer userId, String keyword) {
@@ -129,4 +155,7 @@ public class SearchService {
     }
 
 
+    public Result<List<UsersVO>> searchUsers(Integer userId, String keyword) {
+        return null;
+    }
 }
