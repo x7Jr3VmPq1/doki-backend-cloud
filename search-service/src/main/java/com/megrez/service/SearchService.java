@@ -4,23 +4,24 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.AnalyticsServiceClient;
+import com.megrez.client.SocialServiceClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.client.VideoInfoClient;
 import com.megrez.constant.GatewayHttpPath;
+import com.megrez.dto.social_service.CheckFollowDTO;
 import com.megrez.es_document.ESSearchHistory;
 import com.megrez.es_document.UserESDocument;
 import com.megrez.es_document.VideoESDocument;
 import com.megrez.mapper.SearchHistoryMapper;
-import com.megrez.mysql_entity.SearchHistory;
-import com.megrez.mysql_entity.User;
-import com.megrez.mysql_entity.Video;
-import com.megrez.mysql_entity.VideoStatistics;
+import com.megrez.mysql_entity.*;
 import com.megrez.result.Result;
 import com.megrez.utils.CollectionUtils;
 import com.megrez.vo.search_service.SearchVO;
 import com.megrez.vo.user_service.UsersVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 
@@ -47,13 +48,15 @@ public class SearchService {
     private final UserServiceClient userServiceClient;
     private final VideoInfoClient videoInfoClient;
     private final AnalyticsServiceClient analyticsServiceClient;
+    private final SocialServiceClient socialServiceClient;
 
-    public SearchService(SearchHistoryMapper mapper, ElasticsearchOperations operations, UserServiceClient userServiceClient, VideoInfoClient videoInfoClient, AnalyticsServiceClient analyticsServiceClient) {
+    public SearchService(SearchHistoryMapper mapper, ElasticsearchOperations operations, UserServiceClient userServiceClient, VideoInfoClient videoInfoClient, AnalyticsServiceClient analyticsServiceClient, SocialServiceClient socialServiceClient) {
         this.mapper = mapper;
         this.operations = operations;
         this.userServiceClient = userServiceClient;
         this.videoInfoClient = videoInfoClient;
         this.analyticsServiceClient = analyticsServiceClient;
+        this.socialServiceClient = socialServiceClient;
     }
 
     /**
@@ -202,15 +205,54 @@ public class SearchService {
     }
 
 
-    public Result<List<UserESDocument>> searchUsers(Integer userId, String keyword) {
+    public Result<List<UsersVO>> searchUsers(Integer userId, String keyword) {
 
         NativeQuery query = new NativeQueryBuilder().withQuery(
                 q -> q.multiMatch(mm -> mm.query(keyword).fields(List.of("id", "username", "bio")))
         ).build();
         SearchHits<UserESDocument> hits = operations.search(query, UserESDocument.class);
 
+        if (hits.getSearchHits().isEmpty()) {
+            return Result.success(List.of());
+        }
+
         List<UserESDocument> list = hits.stream().map(SearchHit::getContent).toList();
-        list.forEach(doc -> doc.setAvatarUrl(GatewayHttpPath.AVATAR + doc.getAvatarUrl()));
-        return Result.success(list);
+
+        // 如果有userId,则判断关注状态
+        Map<Integer, UserFollow> followMap;
+        if (userId != null && userId > 0) {
+            List<Integer> ids = list.stream().map(UserESDocument::getUserId).toList();
+
+            CheckFollowDTO checkFollowDTO = new CheckFollowDTO();
+            checkFollowDTO.setUid(userId);
+            checkFollowDTO.setTargetIds(ids);
+            Result<List<UserFollow>> result = socialServiceClient.checkFollow(checkFollowDTO);
+
+            if (!result.isSuccess()) {
+                log.error("社交服务调用失败,{}", result.getMsg());
+                throw new RuntimeException("社交服务调用失败");
+            }
+
+            List<UserFollow> followList = result.getData();
+            followMap = CollectionUtils.toMap(followList, UserFollow::getFollowingId);
+        } else {
+            followMap = Map.of();
+        }
+
+        List<UsersVO> voList = list.stream().map(doc -> {
+            UsersVO vo = new UsersVO();
+            BeanUtils.copyProperties(doc, vo);
+            vo.setId(doc.getUserId());
+            vo.setFollowed(followMap.containsKey(doc.getUserId()));
+            UserStatistics statistics = new UserStatistics();
+            statistics.setFollowerCount(doc.getFollowerCount());
+            statistics.setFollowingCount(doc.getFollowingCount());
+            statistics.setLikeCount(doc.getLikeCount());
+            vo.setStat(statistics);
+            vo.setAvatarUrl(GatewayHttpPath.AVATAR + vo.getAvatarUrl());
+            return vo;
+        }).toList();
+
+        return Result.success(voList);
     }
 }

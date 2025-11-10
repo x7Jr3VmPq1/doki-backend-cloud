@@ -56,8 +56,8 @@ public class SearchController {
      * @return 用户列表
      */
     @GetMapping("/user")
-    public Result<List<UserESDocument>> searchUsers(@CurrentUser(required = false) Integer userId,
-                                                    @RequestParam String keyword) {
+    public Result<List<UsersVO>> searchUsers(@CurrentUser(required = false) Integer userId,
+                                             @RequestParam String keyword) {
         return searchService.searchUsers(userId, keyword);
     }
 
