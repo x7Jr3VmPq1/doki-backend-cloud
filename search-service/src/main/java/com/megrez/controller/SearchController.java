@@ -2,6 +2,7 @@ package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
 import com.megrez.es_document.ESSearchHistory;
+import com.megrez.es_document.UserESDocument;
 import com.megrez.mysql_entity.SearchHistory;
 import com.megrez.result.Result;
 import com.megrez.service.SearchService;
@@ -47,14 +48,21 @@ public class SearchController {
         return searchService.search(userId, keyword);
     }
 
+    /**
+     * 根据关键词搜索用户
+     *
+     * @param userId  用户ID
+     * @param keyword 关键词
+     * @return 用户列表
+     */
     @GetMapping("/user")
-    public Result<List<UsersVO>> searchUsers(@CurrentUser(required = false) Integer userId,
-                                             @RequestParam String keyword) {
+    public Result<List<UserESDocument>> searchUsers(@CurrentUser(required = false) Integer userId,
+                                                    @RequestParam String keyword) {
         return searchService.searchUsers(userId, keyword);
     }
 
     @GetMapping("/suggest")
-    public Result<List<ESSearchHistory>> getSuggestion(String pre) {
+    public Result<List<String>> getSuggestion(String pre) {
         return searchService.getSuggestion(pre);
     }
 }

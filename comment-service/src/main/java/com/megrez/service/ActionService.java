@@ -64,7 +64,7 @@ public class ActionService {
             // 5. 发送消息
             rabbitMQUtils.sendMessage(
                     CommentLikeExchange.FANOUT_EXCHANGE_COMMENT_LIKE,
-                    null,
+                    "",
                     JSONUtils.toJSON(
                             CommentLikeMessage.builder()
                                     .type(type)
@@ -123,7 +123,7 @@ public class ActionService {
                     .build();
             rabbitMQUtils.sendMessage(
                     CommentLikeExchange.FANOUT_EXCHANGE_COMMENT_LIKE,
-                    null,
+                    "",
                     JSONUtils.toJSON(message));
         }
         // 返回结果

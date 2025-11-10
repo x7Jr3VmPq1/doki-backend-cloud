@@ -4,10 +4,13 @@ import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.UserStatistics;
 import com.megrez.mapper.UserMapper;
 import com.megrez.mapper.UserStatisticsMapper;
+import com.megrez.rabbit.exchange.UserAddExchange;
+import com.megrez.rabbit.exchange.UserUpdateExchange;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JWTUtil;
 import com.megrez.utils.PasswordUtils;
+import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.user_service.LoginSuccessVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +26,13 @@ public class LoginService {
     private final SmsService smsService;
     private final UserMapper userMapper;
     private final UserStatisticsMapper userStatisticsMapper;
+    private final RabbitMQUtils rabbitMQUtils;
 
-    public LoginService(SmsService smsService, UserMapper userMapper, UserStatisticsMapper userStatisticsMapper) {
+    public LoginService(SmsService smsService, UserMapper userMapper, UserStatisticsMapper userStatisticsMapper, RabbitMQUtils rabbitMQUtils) {
         this.smsService = smsService;
         this.userMapper = userMapper;
         this.userStatisticsMapper = userStatisticsMapper;
+        this.rabbitMQUtils = rabbitMQUtils;
     }
 
     /**
@@ -50,6 +55,7 @@ public class LoginService {
                 newuser.setPhoneNumber(phone);
                 newuser.setUsername("新用户" + new Random().nextInt(100000000));
                 newuser.setAvatarUrl("default.jpg");
+                newuser.setBio("");
                 newuser.setCreatedAt(System.currentTimeMillis());
                 newuser.setUpdatedAt(System.currentTimeMillis());
                 // 写入
@@ -61,6 +67,8 @@ public class LoginService {
                                 .updatedAt(System.currentTimeMillis())
                                 .build()
                 );
+                // 发送用户更新消息
+                rabbitMQUtils.sendMessage(UserAddExchange.FANOUT_EXCHANGE_USER_ADD, "", newuser);
                 log.info("新用户：{}", phone);
                 return Result.success(
                         new LoginSuccessVO(

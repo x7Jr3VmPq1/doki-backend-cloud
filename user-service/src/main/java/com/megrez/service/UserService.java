@@ -8,11 +8,13 @@ import com.megrez.dto.social_service.CheckFollowDTO;
 import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mapper.UserMapper;
+import com.megrez.rabbit.exchange.UserUpdateExchange;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JWTUtil;
 import com.megrez.utils.PasswordUtils;
 
+import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.user_service.UsersVO;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
@@ -35,12 +37,14 @@ public class UserService {
     private final UserMapper userMapper;
     private final ImageServiceClient imageServiceClient;
     private final SocialServiceClient socialServiceClient;
+    private final RabbitMQUtils rabbitMQUtils;
 
-    public UserService(SmsService smsService, UserMapper userMapper, ImageServiceClient imageServiceClient, SocialServiceClient socialServiceClient) {
+    public UserService(SmsService smsService, UserMapper userMapper, ImageServiceClient imageServiceClient, SocialServiceClient socialServiceClient, RabbitMQUtils rabbitMQUtils) {
         this.smsService = smsService;
         this.userMapper = userMapper;
         this.imageServiceClient = imageServiceClient;
         this.socialServiceClient = socialServiceClient;
+        this.rabbitMQUtils = rabbitMQUtils;
     }
 
     /**
@@ -97,19 +101,22 @@ public class UserService {
             }
         }
         // 更新写入
+        user.setUpdatedAt(System.currentTimeMillis());
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(User::getId, user.getId()); // 用户ID
         wrapper.set(User::getUsername, user.getUsername()); // 用户名
         wrapper.set(User::getBio, user.getBio()); // 个人简介
-        wrapper.set(User::getUpdatedAt, System.currentTimeMillis()); // 更新时间
+        wrapper.set(User::getUpdatedAt, user.getUpdatedAt()); // 更新时间
         // 只有在头像不为空时才更新。
         if (user.getAvatarUrl() != null) {
             wrapper.set(User::getAvatarUrl, user.getAvatarUrl());
         }
 
-        log.info("{}", user);
         int updated = userMapper.update(wrapper);
+        User updatedUser = userMapper.selectById(user.getId());
         if (updated == 1) {
+            // 发送更新消息
+            rabbitMQUtils.sendMessage(UserUpdateExchange.FANOUT_EXCHANGE_USER_UPDATE, "", updatedUser);
             // 成功返回更新后的user对象
             return Result.success(user);
         }

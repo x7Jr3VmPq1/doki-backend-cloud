@@ -5,7 +5,6 @@ import io.github.pigmesh.ai.deepseek.core.DeepSeekClient;
 import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionModel;
 import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionRequest;
 import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionResponse;
-import io.github.pigmesh.ai.deepseek.core.chat.ResponseFormatType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -51,8 +50,8 @@ public class XiaoMeng {
                     String content = resp.choices().get(0).delta().content();
                     collector.append(content);
                 })
-                .filter(c -> {
-                    if (c.choices().get(0).delta().content().equals("[") || !shouldStop.isEmpty()) {
+                .filter(resp -> {
+                    if (resp.choices().get(0).delta().content().equals("[") || !shouldStop.isEmpty()) {
                         shouldStop.add(true);
                         return false;
                     }

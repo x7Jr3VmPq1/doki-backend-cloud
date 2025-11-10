@@ -1,11 +1,14 @@
 package com.megrez.service;
 
-import co.elastic.clients.elasticsearch._types.query_dsl.PrefixQuery;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.AnalyticsServiceClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.client.VideoInfoClient;
+import com.megrez.constant.GatewayHttpPath;
 import com.megrez.es_document.ESSearchHistory;
+import com.megrez.es_document.UserESDocument;
 import com.megrez.es_document.VideoESDocument;
 import com.megrez.mapper.SearchHistoryMapper;
 import com.megrez.mysql_entity.SearchHistory;
@@ -18,6 +21,7 @@ import com.megrez.vo.search_service.SearchVO;
 import com.megrez.vo.user_service.UsersVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -29,6 +33,7 @@ import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightFieldParameters;
 import org.springframework.stereotype.Service;
+
 
 import java.util.List;
 import java.util.Map;
@@ -71,7 +76,7 @@ public class SearchService {
      * @param pre 前缀
      * @return 补全列表
      */
-    public Result<List<ESSearchHistory>> getSuggestion(String pre) {
+    public Result<List<String>> getSuggestion(String pre) {
         Query query = new NativeQueryBuilder()
                 .withQuery(q -> q.match(m -> m
                         .query(pre)
@@ -82,15 +87,52 @@ public class SearchService {
         SearchHits<ESSearchHistory> result = operations.search(query, ESSearchHistory.class);
         List<ESSearchHistory> list = result.stream().map(SearchHit::getContent).toList();
 
-        return Result.success(list);
+        List<String> words = list.stream().map(ESSearchHistory::getWord).toList();
+        return Result.success(words);
     }
 
     public Result<List<SearchVO>> search(Integer userId, String keyword) {
         Query query = new NativeQueryBuilder()
                 .withQuery(q -> q
-                        .multiMatch(mm -> mm
-                                .query(keyword)
-                                .fields("title", "description", "username")
+                        .functionScore(fs -> fs
+                                .query(inner -> inner
+                                        .multiMatch(mm -> mm
+                                                .query(keyword)
+                                                .fields("title", "description", "username")
+                                        )
+                                )
+                                .functions(
+                                        List.of(
+                                                // 根据点赞加权
+                                                FunctionScore.of(f -> f
+                                                        .fieldValueFactor(ff -> ff
+                                                                .field("likeCount")
+                                                                .factor(1.0)       // 放大系数
+                                                                .modifier(FieldValueFactorModifier.Log1p) // 评分函数
+                                                        )
+                                                ),
+                                                // 根据评论加权
+                                                FunctionScore.of(f -> f
+                                                        .fieldValueFactor(ff -> ff
+                                                                .field("commentCount")
+                                                                .factor(1.0)
+                                                                .modifier(FieldValueFactorModifier.Log1p)
+                                                        )
+                                                ),
+                                                // 根据播放加权
+                                                FunctionScore.of(f -> f
+                                                        .fieldValueFactor(ff -> ff
+                                                                .field("views")
+                                                                .factor(1.0)
+                                                                .modifier(FieldValueFactorModifier.Log1p)
+                                                        )
+                                                )
+
+                                        )
+                                )
+                                .scoreMode(FunctionScoreMode.Sum)
+                                .boostMode(FunctionBoostMode.Multiply)
+
                         )
                 )
                 .withHighlightQuery(new HighlightQuery(
@@ -106,6 +148,11 @@ public class SearchService {
                         ),
                         null
                 ))
+                .withSort(s -> s
+                        .field(f -> f.field("_score").order(SortOrder.Desc))
+                )
+//                .withSearchAfter(List.of(123)) // 某个分数
+                .withMaxResults(21)
                 .build();
 
         SearchHits<VideoESDocument> hits = operations.search(query, VideoESDocument.class);
@@ -155,7 +202,15 @@ public class SearchService {
     }
 
 
-    public Result<List<UsersVO>> searchUsers(Integer userId, String keyword) {
-        return null;
+    public Result<List<UserESDocument>> searchUsers(Integer userId, String keyword) {
+
+        NativeQuery query = new NativeQueryBuilder().withQuery(
+                q -> q.multiMatch(mm -> mm.query(keyword).fields(List.of("id", "username", "bio")))
+        ).build();
+        SearchHits<UserESDocument> hits = operations.search(query, UserESDocument.class);
+
+        List<UserESDocument> list = hits.stream().map(SearchHit::getContent).toList();
+        list.forEach(doc -> doc.setAvatarUrl(GatewayHttpPath.AVATAR + doc.getAvatarUrl()));
+        return Result.success(list);
     }
 }
