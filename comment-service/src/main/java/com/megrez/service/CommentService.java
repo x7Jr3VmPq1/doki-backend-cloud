@@ -344,4 +344,35 @@ public class CommentService {
         return Result.success(videoCommentsVOS);
 
     }
+
+    public Result<VideoCommentsVO> getSingle(Integer userId, String cid) {
+
+        VideoComments videoComment = mongoTemplate.findById(cid, VideoComments.class);
+
+        if (videoComment == null) {
+            return Result.success(null);
+        }
+
+        // 如果它不是一条根评论，查询一下它在父评论中页码的位置
+        if (!videoComment.getIsRoot()) {
+//            mongoTemplate.find()
+        }
+
+        CommentLike liked = mongoTemplate.findOne(new Query(Criteria.where("commentId").is(cid).and("userId").is(userId)), CommentLike.class);
+
+        Integer commentUserId = videoComment.getUserId();
+
+        Result<List<User>> userinfoById = userServiceClient.getUserinfoById(List.of(commentUserId));
+        if (!userinfoById.isSuccess()) {
+            log.error("用户服务调用失败.");
+            throw new RuntimeException();
+        }
+
+        VideoCommentsVO vo = new VideoCommentsVO();
+        vo.setComments(videoComment);
+        vo.setUser(userinfoById.getData().get(0));
+        vo.setLiked(liked != null);
+
+        return Result.success(vo);
+    }
 }

@@ -103,4 +103,17 @@ public class CommentController {
                                                    @RequestParam Integer page) {
         return commentService.findReplyComment(userId, pid, page);
     }
+
+    /**
+     * 获取单条评论
+     *
+     * @param userId 用户ID
+     * @param cid    目标评论ID
+     * @return 评论对象
+     */
+    @GetMapping("/single")
+    public Result<VideoCommentsVO> getSingle(@CurrentUser Integer userId,
+                                             @RequestParam String cid) {
+        return commentService.getSingle(userId, cid);
+    }
 }
