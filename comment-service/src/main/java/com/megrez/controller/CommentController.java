@@ -8,16 +8,11 @@ import com.megrez.result.Result;
 import com.megrez.service.CommentService;
 import com.megrez.vo.CursorLoad;
 import com.megrez.vo.comment_service.VideoCommentsVO;
-import io.github.pigmesh.ai.deepseek.core.DeepSeekClient;
-import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionModel;
-import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionRequest;
-import io.github.pigmesh.ai.deepseek.core.chat.ChatCompletionResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 /**
  * 评论增删改查接口
@@ -92,19 +87,20 @@ public class CommentController {
         log.info("用户ID：{} 拉取视频ID为：{}的评论", userId, videoId);
         return commentService.getComments(userId, videoId, cursor, parentCommentId);
     }
-//
-//    @Autowired
-//    private DeepSeekClient deepSeekClient;
-//
-//
-//    @GetMapping(value = "/sync/chat")
-//    public ChatCompletionResponse syncChat(String prompt) {
-//        ChatCompletionRequest request = ChatCompletionRequest.builder()
-//                // 根据渠道模型名称动态修改这个参数
-//                .model(ChatCompletionModel.DEEPSEEK_CHAT)
-//                .addUserMessage(prompt).build();
-//
-//        return deepSeekClient.chatCompletion(request).execute();
-//    }
 
+
+    /**
+     * 分页获取回复
+     *
+     * @param userId 用户ID
+     * @param pid    父评论ID
+     * @param page   页码
+     * @return 回复列表
+     */
+    @GetMapping("/page")
+    public Result<List<VideoCommentsVO>> getByPage(@CurrentUser Integer userId,
+                                                   @RequestParam String pid,
+                                                   @RequestParam Integer page) {
+        return commentService.findReplyComment(userId, pid, page);
+    }
 }

@@ -19,8 +19,10 @@ import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.CursorLoad;
 import com.megrez.vo.comment_service.VideoCommentsVO;
 import org.bson.types.ObjectId;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -175,7 +177,9 @@ public class CommentService {
         // 1. 构建查询返回基础评论，如果传入了父评论id，则说明是拉取回复，否则拉取根评论
         int limit = (parentCommentId == null) ? 10 : 2; // 如果是拉取根评论，每次拉取10条，如果是回复，每次拉取2条
         // 执行查询
-        List<VideoComments> comments = parentCommentId == null ? findRootComment(videoId, nextOffset.getScore(), nextOffset.getLastCommentId(), limit + 1) : findReplyComment(videoId, parentCommentId, nextOffset.getLastCommentId(), limit + 1);
+        List<VideoComments> comments = parentCommentId == null ?
+                findRootComment(videoId, nextOffset.getScore(), nextOffset.getLastCommentId(), limit + 1)
+                : findReplyComment(videoId, parentCommentId, nextOffset.getLastCommentId(), limit + 1);
         // 没有查询到任何评论，返回空集合
         if (comments.isEmpty()) {
             return Result.success(CursorLoad.empty());
@@ -196,6 +200,17 @@ public class CommentService {
                 log.error("加密偏移量时发生错误！", e);
             }
         }
+        List<VideoCommentsVO> list = getVideoCommentsVOS(userId, comments);
+        // 构建最终结果并返回
+        // 对于未登录用户，不返回游标，以禁止翻页
+        return Result.success(CursorLoad.of(
+                list,
+                userId != -1 && hasMore,
+                userId != -1 ? encryptedState : null)
+        );
+    }
+
+    private @NotNull List<VideoCommentsVO> getVideoCommentsVOS(Integer userId, List<VideoComments> comments) {
         // 获取的评论ID集合
         List<String> commentIdsCollect = comments.stream().map(VideoComments::getId).toList();
         // 对应评论的用户ID集合
@@ -213,11 +228,11 @@ public class CommentService {
                 users = userinfoById.getData();
             } else {
                 log.error("用户服务调用失败，原因：{}", userinfoById.getMsg());
-                return Result.error(Response.UNKNOWN_WRONG);
+                throw new RuntimeException();
             }
         } catch (Exception e) {
             log.error("用户服务不可用，原因：{}", e.getMessage());
-            return Result.error(Response.UNKNOWN_WRONG);
+            throw new RuntimeException();
         }
         // 4. 组装完整评论信息并返回
         // 先构建 userId -> User 的 Map
@@ -227,7 +242,7 @@ public class CommentService {
         Map<String, CommentLike> likedCommentsMap = likedList.stream().collect(Collectors.toMap(CommentLike::getCommentId, Function.identity()));
 
         // 构建 VO List 组装数据
-        List<VideoCommentsVO> list = comments.stream().map(c -> {
+        return comments.stream().map(c -> {
             VideoCommentsVO vo = new VideoCommentsVO();
             // 把文件名转为URL
             if (c.getImgUrl() != null && !c.getImgUrl().isEmpty()) {
@@ -240,13 +255,6 @@ public class CommentService {
             vo.setUser(userMap.get(c.getUserId()));
             return vo;
         }).toList();
-        // 构建最终结果并返回
-        // 对于未登录用户，不返回游标，以禁止翻页
-        return Result.success(CursorLoad.of(
-                list,
-                userId != -1 && hasMore,
-                userId != -1 ? encryptedState : null)
-        );
     }
 
 
@@ -298,7 +306,6 @@ public class CommentService {
      */
     private List<VideoComments> findReplyComment(Integer videoId, String parentCommentId, String lastCommentId, int limit) {
         Query query = new Query();
-        // TODO 如果回复被删除，前端的逻辑会找不到回复目标的Userinfo，待修复。
         // 基本条件
         query.addCriteria(Criteria.where("videoId").is(videoId));
         query.addCriteria(Criteria.where("parentCommentId").is(parentCommentId));
@@ -314,5 +321,27 @@ public class CommentService {
         query.with(Sort.by(Sort.Direction.ASC, "_id")).limit(limit);
 
         return mongoTemplate.find(query, VideoComments.class);
+    }
+
+    public Result<List<VideoCommentsVO>> findReplyComment(Integer userId, String pid, Integer page) {
+
+        Query query = new Query();
+        // 排序
+        query.with(PageRequest.of(page, 5));
+        query.with(Sort.by(Sort.Direction.ASC, "_id"));
+        query.addCriteria(Criteria.where("parentCommentId").is(pid));
+        query.addCriteria(Criteria.where("isRoot").is(false));
+        query.addCriteria(Criteria.where("isDeleted").is(false));
+
+        List<VideoComments> videoComments = mongoTemplate.find(query, VideoComments.class);
+
+        if (videoComments.isEmpty()) {
+            return Result.success(List.of());
+        }
+
+        List<VideoCommentsVO> videoCommentsVOS = getVideoCommentsVOS(userId, videoComments);
+
+        return Result.success(videoCommentsVOS);
+
     }
 }
