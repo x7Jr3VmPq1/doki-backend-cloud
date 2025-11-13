@@ -17,6 +17,7 @@ import com.megrez.utils.JSONUtils;
 import com.megrez.utils.PageTokenUtils;
 import com.megrez.utils.RabbitMQUtils;
 import com.megrez.vo.CursorLoad;
+import com.megrez.vo.comment_service.SingleCommentVO;
 import com.megrez.vo.comment_service.VideoCommentsVO;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -345,17 +346,31 @@ public class CommentService {
 
     }
 
-    public Result<VideoCommentsVO> getSingle(Integer userId, String cid) {
+    public Result<SingleCommentVO> getSingle(Integer userId, String cid) {
 
         VideoComments videoComment = mongoTemplate.findById(cid, VideoComments.class);
 
-        if (videoComment == null) {
-            return Result.success(null);
-        }
 
         // 如果它不是一条根评论，查询一下它在父评论中页码的位置
+        int pageNum = -1;
+        assert videoComment != null;
         if (!videoComment.getIsRoot()) {
-//            mongoTemplate.find()
+            String pid = videoComment.getParentCommentId();
+
+            Query query = new Query();
+            query.addCriteria(Criteria.where("parentCommentId").is(pid)
+                    .and("createdAt").lt(videoComment.getCreatedAt()));
+            long countBefore = mongoTemplate.count(query, VideoComments.class);
+
+            int pageSize = 5;
+            pageNum = (int) (countBefore / pageSize) + 1;
+
+            // 如果是次级评论，则最后返回的是它的根评论。
+            videoComment = mongoTemplate.findById(pid, VideoComments.class);
+        }
+
+        if (videoComment == null) {
+            return Result.success(null);
         }
 
         CommentLike liked = mongoTemplate.findOne(new Query(Criteria.where("commentId").is(cid).and("userId").is(userId)), CommentLike.class);
@@ -368,10 +383,11 @@ public class CommentService {
             throw new RuntimeException();
         }
 
-        VideoCommentsVO vo = new VideoCommentsVO();
+        SingleCommentVO vo = new SingleCommentVO();
         vo.setComments(videoComment);
         vo.setUser(userinfoById.getData().get(0));
         vo.setLiked(liked != null);
+        vo.setPage(pageNum);
 
         return Result.success(vo);
     }

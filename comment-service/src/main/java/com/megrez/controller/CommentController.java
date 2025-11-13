@@ -7,6 +7,7 @@ import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.service.CommentService;
 import com.megrez.vo.CursorLoad;
+import com.megrez.vo.comment_service.SingleCommentVO;
 import com.megrez.vo.comment_service.VideoCommentsVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,7 +113,7 @@ public class CommentController {
      * @return 评论对象
      */
     @GetMapping("/single")
-    public Result<VideoCommentsVO> getSingle(@CurrentUser Integer userId,
+    public Result<SingleCommentVO> getSingle(@CurrentUser Integer userId,
                                              @RequestParam String cid) {
         return commentService.getSingle(userId, cid);
     }
