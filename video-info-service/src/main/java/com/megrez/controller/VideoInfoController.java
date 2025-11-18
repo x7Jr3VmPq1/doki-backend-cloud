@@ -105,4 +105,65 @@ public class VideoInfoController {
         log.info("获取用户历史记录信息：{}", userId);
         return videoInfoService.getHistoryInfoByUserId(userId, cursor);
     }
+    // TODO 添加一个同时获得视频元数据，用户信息，统计数据的方法
+
+    @GetMapping("/v2")
+    public Result<VideoVO> getVideoInfoByIdV2(@CurrentUser(required = false) Integer userId,
+                                              @RequestParam Integer vid) {
+        return videoInfoService.getVideoInfoByIdV2(userId, vid);
+    }
+
+
+    /**
+     * 获取用户最近喜欢的视频
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 视频列表
+     */
+    @GetMapping("/recent/likes")
+    public Result<List<Video>> getRecentLikes(@CurrentUser Integer userId,
+                                              @RequestParam Integer count) {
+        return videoInfoService.getRecentLikes(userId, 3);
+    }
+
+    /**
+     * 获取用户最近收藏的视频
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 视频列表
+     */
+    @GetMapping("/recent/favorites")
+    public Result<List<Video>> getRecentFavorites(@CurrentUser Integer userId,
+                                            @RequestParam Integer count) {
+        return videoInfoService.getRecentFavorites(userId, 3);
+    }
+
+    /**
+     * 获取用户最近的观看历史视频
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 视频列表
+     */
+    @GetMapping("/recent/histories")
+    public Result<List<Video>> getRecentHistories(@CurrentUser Integer userId,
+                                            @RequestParam Integer count) {
+        return videoInfoService.getRecentHistories(userId, 3);
+    }
+
+    /**
+     * 获取用户最近的作品
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 视频列表
+     */
+    @GetMapping("/recent/works")
+    public Result<List<Video>> getRecentWorks(@CurrentUser Integer userId,
+                                        @RequestParam Integer count) {
+        return videoInfoService.getRecentWorks(userId, 3);
+    }
+
 }

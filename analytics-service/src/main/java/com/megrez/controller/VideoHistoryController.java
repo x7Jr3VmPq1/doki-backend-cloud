@@ -55,6 +55,20 @@ public class VideoHistoryController {
     }
 
     /**
+     * 获取指定数量的历史记录
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 观看记录对象集合
+     */
+    @GetMapping("/records/count")
+    public Result<List<VideoHistory>> getVideoHistoryByCount(@RequestParam("userId") Integer userId,
+                                                             @RequestParam("count") Integer count) {
+        log.info("查询历史记录，用户ID：{} 数量：{}", userId, count);
+        return videoHistoryService.getVideoHistoryByCount(userId, count);
+    }
+
+    /**
      * 获取用户的历史观看时长
      *
      * @param userId  用户ID

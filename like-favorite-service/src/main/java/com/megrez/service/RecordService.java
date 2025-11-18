@@ -1,6 +1,7 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.megrez.mapper.LikeMapper;
 import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.mapper.RecordMapper;
 import com.megrez.result.Result;
@@ -14,9 +15,11 @@ import java.util.List;
 public class RecordService {
 
     private final RecordMapper recordMapper;
+    private final LikeMapper likeMapper;
 
-    public RecordService(RecordMapper recordMapper) {
+    public RecordService(RecordMapper recordMapper, LikeMapper likeMapper) {
         this.recordMapper = recordMapper;
+        this.likeMapper = likeMapper;
     }
 
     public Result<CursorLoad<VideoLikes>> getRecordsByUserId(Integer userId, String cursor) throws Exception {
@@ -42,5 +45,15 @@ public class RecordService {
         }
 
         return Result.success(CursorLoad.of(videoLikes, hasMore, cursor));
+    }
+
+    public Result<List<VideoLikes>> getRecordsByCount(Integer userId, Integer count) {
+        List<VideoLikes> videoLikes = likeMapper.selectList(
+                new LambdaQueryWrapper<VideoLikes>()
+                        .eq(VideoLikes::getUserId, userId)
+                        .orderByDesc(VideoLikes::getCreatedAt)
+                        .last("LIMIT " + count)
+        );
+        return Result.success(videoLikes);
     }
 }

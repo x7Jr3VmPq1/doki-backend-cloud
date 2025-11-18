@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 获取用户对视频的点赞记录
  */
@@ -27,6 +29,13 @@ public class RecordController {
     @GetMapping("/records")
     public Result<CursorLoad<VideoLikes>> getRecordsByUserId(Integer userId, String cursor) throws Exception {
         log.info("获取用户点赞记录，ID：{}", userId);
-        return recordService.getRecordsByUserId(userId,cursor);
+        return recordService.getRecordsByUserId(userId, cursor);
+    }
+
+
+    @GetMapping("/records/count")
+    public Result<List<VideoLikes>> getRecordsByCount(Integer userId, Integer count) {
+        log.info("获取用户点赞记录，ID:{},数量：{}", userId, count);
+        return recordService.getRecordsByCount(userId, count);
     }
 }

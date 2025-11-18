@@ -3,10 +3,11 @@ package com.megrez.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.client.AnalyticsServiceClient;
 import com.megrez.client.LikeFavoriteClient;
+import com.megrez.client.SocialServiceClient;
+import com.megrez.client.UserServiceClient;
 import com.megrez.constant.GatewayHttpPath;
-import com.megrez.mysql_entity.Video;
-import com.megrez.mysql_entity.VideoLikes;
-import com.megrez.mysql_entity.VideoStatistics;
+import com.megrez.dto.social_service.CheckFollowDTO;
+import com.megrez.mysql_entity.*;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
@@ -16,6 +17,7 @@ import com.megrez.vo.CursorLoad;
 import com.megrez.vo.analytics_service.VideoHistory;
 import com.megrez.vo.analytics_service.VideoWatched;
 import com.megrez.vo.video_info_service.VideoVO;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -33,11 +35,15 @@ public class VideoInfoService {
     private final VideoMapper videoMapper;
     private final LikeFavoriteClient likeFavoriteClient;
     private final AnalyticsServiceClient analyticsServiceClient;
+    private final UserServiceClient userServiceClient;
+    private final SocialServiceClient socialServiceClient;
 
-    public VideoInfoService(VideoMapper videoMapper, LikeFavoriteClient likeFavoriteClient, AnalyticsServiceClient analyticsServiceClient) {
+    public VideoInfoService(VideoMapper videoMapper, LikeFavoriteClient likeFavoriteClient, AnalyticsServiceClient analyticsServiceClient, UserServiceClient userServiceClient, SocialServiceClient socialServiceClient) {
         this.videoMapper = videoMapper;
         this.likeFavoriteClient = likeFavoriteClient;
         this.analyticsServiceClient = analyticsServiceClient;
+        this.userServiceClient = userServiceClient;
+        this.socialServiceClient = socialServiceClient;
     }
 
     /**
@@ -51,18 +57,6 @@ public class VideoInfoService {
         Video video = videoMapper.selectById(videoId);
         video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
         video.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + video.getVideoFilename());
-
-        VideoVO videoVO = new VideoVO();
-        BeanUtils.copyProperties(video, videoVO);
-        // 获取统计信息
-        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(List.of(video.getId()));
-        if (videoStatById.isSuccess()) {
-            videoVO.setStatistics(videoStatById.getData().get(0));
-        }
-
-        if (userId > 0) {
-
-        }
 
         return Result.success(video);
     }
@@ -117,7 +111,6 @@ public class VideoInfoService {
         List<VideoVO> list = videos.stream().map(video -> {
             VideoVO videoVO = new VideoVO();
             BeanUtils.copyProperties(video, videoVO);
-            log.warn("{}", video);
             videoVO.setStatistics(statisticsMap.get(video.getId()));
             videoVO.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + videoVO.getCoverName());
             videoVO.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + videoVO.getVideoFilename());
@@ -231,16 +224,144 @@ public class VideoInfoService {
         if (vid.isEmpty()) {
             return Result.success(List.of());
         }
-        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, vid));
+        List<Video> videos = getVideos(vid);
 
-        // 转换视频播放链接和封面图URL
+        return Result.success(videos);
+    }
+
+    public Result<VideoVO> getVideoInfoByIdV2(Integer userId, Integer vid) {
+        // 1. 查询视频数据
+        Video video = videoMapper.selectById(vid);
+
+        if (video == null) {
+            return Result.success(null);
+        }
+        video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
+        video.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + video.getVideoFilename());
+        // 2. 查询统计信息
+        Result<List<VideoStatistics>> stat = analyticsServiceClient.getVideoStatById(List.of(vid));
+        // 3. 查询上传者信息
+        Result<List<User>> userinfo = userServiceClient.getUserinfoById(List.of(video.getUploaderId()));
+
+        if (!stat.isSuccess() || !userinfo.isSuccess()) {
+            log.error("外部服务调用失败");
+            throw new RuntimeException();
+        }
+
+        // 4. 查询是否点赞
+        // 5. 查询上次观看时长和观看的时间
+        // 6. 查询是否关注了上传者
+        boolean liked = false;
+        boolean followed = false;
+        double watchedTime = 0;
+        long watchedAt = 0;
+        if (userId > 0) {
+            Result<Boolean> likedResult = likeFavoriteClient.existLikeRecord(userId, vid);
+            Result<List<VideoWatched>> videoWatchedResult = analyticsServiceClient.getVideoWatched(userId, List.of(vid));
+            if (!userId.equals(video.getUploaderId())) {
+                Result<List<UserFollow>> follow = socialServiceClient.checkFollow(new CheckFollowDTO(userId, List.of(video.getUploaderId())));
+                if (!follow.isSuccess()) {
+                    log.error("关系服务调用失败");
+                    throw new RuntimeException();
+                }
+                followed = !follow.getData().isEmpty(); // 如果为空，说明没有关注
+            }
+            if (!likedResult.isSuccess() || !videoWatchedResult.isSuccess()) {
+                log.error("外部服务调用失败");
+                throw new RuntimeException();
+            }
+            liked = likedResult.getData();
+            watchedTime = videoWatchedResult.getData().get(0).getTime();
+
+        }
+        // 7. 聚合
+        VideoVO vo = new VideoVO();
+        BeanUtils.copyProperties(video, vo);
+        vo.setStatistics(stat.getData().get(0));
+        vo.setUser(userinfo.getData().get(0));
+        vo.setLiked(liked);
+        vo.setFollowed(followed);
+        vo.setWatchedTime(watchedTime);
+        vo.setWatchedAt(watchedAt);
+        return Result.success(vo);
+    }
+
+    public Result<List<Video>> getRecentLikes(Integer userId, int count) {
+        Result<List<VideoLikes>> recordsByCount = likeFavoriteClient.getRecordsByCount(userId, count);
+
+        if (!recordsByCount.isSuccess()) {
+            log.error("点赞/收藏服务调用失败");
+            throw new RuntimeException();
+        }
+        List<VideoLikes> data = recordsByCount.getData();
+
+        if (data.isEmpty()) {
+            return Result.success(List.of());
+        }
+
+        List<Integer> vIds = CollectionUtils.toList(data, VideoLikes::getVideoId);
+        List<Video> videos = getVideos(vIds);
+
+        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
+        // 排序
+        videos = vIds.stream()
+                .map(videoMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+        return Result.success(videos);
+    }
+
+
+    public Result<List<Video>> getRecentFavorites(Integer userId, int count) {
+        return null;
+    }
+
+    public Result<List<Video>> getRecentHistories(Integer userId, int count) {
+        Result<List<VideoHistory>> videoHistoryByCount = analyticsServiceClient.getVideoHistoryByCount(userId, count);
+        if (!videoHistoryByCount.isSuccess()) {
+            log.info("统计服务调用失败！");
+            throw new RuntimeException();
+        }
+
+        List<VideoHistory> videoHistories = videoHistoryByCount.getData();
+
+        if (videoHistories.isEmpty()) {
+            return Result.success(List.of());
+        }
+
+        List<Integer> vIds = CollectionUtils.toList(videoHistories, VideoHistory::getVideoId);
+
+        List<Video> videos = getVideos(vIds);
+
+        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
+
+        List<Video> list = vIds.stream().map(videoMap::get).toList();
+
+        return Result.success(list);
+    }
+
+    public Result<List<Video>> getRecentWorks(Integer userId, int count) {
+        return null;
+    }
+
+    /**
+     * 辅助方法，批量查询视频信息并转换播放链接和封面图链接
+     *
+     * @param vIds
+     * @return
+     */
+    private @NotNull List<Video> getVideos(List<Integer> vIds) {
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>()
+                .in(Video::getId, vIds));
+
         videos.forEach(video -> {
             video.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + video.getVideoFilename());
             video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
         });
-
-        return Result.success(videos);
+        return videos;
     }
+
+
 //
 //    public Result<List<Video>> getFavoriteInfoByUserId(Integer userId, Integer targetId) {
 //    }

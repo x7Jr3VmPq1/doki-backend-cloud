@@ -39,6 +39,17 @@ public interface AnalyticsServiceClient {
                                                @RequestParam(value = "cursor", required = false) Long cursor);
 
     /**
+     * 获取指定数量的历史记录
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 观看记录对象集合
+     */
+    @GetMapping("/history/records/count")
+    Result<List<VideoHistory>> getVideoHistoryByCount(@RequestParam("userId") Integer userId,
+                                                      @RequestParam("count") Integer count);
+
+    /**
      * 获取用户的历史观看时长
      *
      * @param userId  用户ID

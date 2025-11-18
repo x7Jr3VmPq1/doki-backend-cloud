@@ -7,6 +7,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 // 一定记得在RequestParam里写上参数名字，不然无法正确绑定！
 @FeignClient(name = "like-favorite-service", path = "/like")
 public interface LikeFavoriteClient {
@@ -35,4 +37,16 @@ public interface LikeFavoriteClient {
     Result<CursorLoad<VideoLikes>> getRecordsByUserId(
             @RequestParam("userId") Integer userId,
             @RequestParam("cursor") String cursor);
+
+
+    /**
+     * 获取指定数量的点赞记录
+     *
+     * @param userId 用户ID
+     * @param count  数量
+     * @return 点赞记录
+     */
+    @GetMapping("/records/count")
+    Result<List<VideoLikes>> getRecordsByCount(@RequestParam("userId") Integer userId,
+                                               @RequestParam("count") Integer count);
 }
