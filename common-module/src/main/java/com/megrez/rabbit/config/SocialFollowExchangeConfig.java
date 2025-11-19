@@ -24,10 +24,25 @@ public class SocialFollowExchangeConfig {
         return new Queue(SocialFollowExchange.QUEUE_SOCIAL_FOLLOW_NOTIFICATION, true);
     }
 
+    // 定义时间线队列
+    @Bean(SocialFollowExchange.QUEUE_SOCIAL_FOLLOW_TIMELINE)
+    public Queue socialFollowTimelineQueue() {
+        return new Queue(SocialFollowExchange.QUEUE_SOCIAL_FOLLOW_TIMELINE, true);
+    }
+
+
     // 绑定通知队列到交换机
     @Bean
     public Binding bindingSocialFollowNotificationQueueToExchange(
             @Qualifier(SocialFollowExchange.QUEUE_SOCIAL_FOLLOW_NOTIFICATION) Queue queue,
+            @Qualifier(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW) FanoutExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange);
+    }
+
+    // 绑定时间线队列到交换机
+    @Bean
+    public Binding bindingSocialFollowTimelineQueueToExchange(
+            @Qualifier(SocialFollowExchange.QUEUE_SOCIAL_FOLLOW_TIMELINE) Queue queue,
             @Qualifier(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW) FanoutExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange);
     }

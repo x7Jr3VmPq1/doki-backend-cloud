@@ -165,5 +165,4 @@ public class VideoInfoController {
                                         @RequestParam Integer count) {
         return videoInfoService.getRecentWorks(userId, 3);
     }
-
 }

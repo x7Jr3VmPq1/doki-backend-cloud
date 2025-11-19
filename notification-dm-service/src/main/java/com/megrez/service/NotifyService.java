@@ -145,20 +145,22 @@ public class NotifyService {
     public void insertByFollow(String message) {
         UserFollow userFollow = JSONUtils.fromJSON(message, UserFollow.class);
         // 获取推送目标ID
-        Integer tid = userFollow.getFollowingId();
-        Integer cid = userFollow.getFollowerId();
-        String groupKey = tid + "-" + "1";
+        if (userFollow.getIsDeleted() == 0) {
+            Integer tid = userFollow.getFollowingId();
+            Integer cid = userFollow.getFollowerId();
+            String groupKey = tid + "-" + "1";
 
-        Notification notification = Notification.builder()
-                .userId(tid)
-                .operatorId(cid)
-                .groupKey(groupKey)
-                .type(1)
-                .build();
-        // 写入
-        mongoTemplate.insert(notification);
-        // 给被通知者的通知未读数 + 1
-        redisClient.incNotifyUnread(tid);
+            Notification notification = Notification.builder()
+                    .userId(tid)
+                    .operatorId(cid)
+                    .groupKey(groupKey)
+                    .type(1)
+                    .build();
+            // 写入
+            mongoTemplate.insert(notification);
+            // 给被通知者的通知未读数 + 1
+            redisClient.incNotifyUnread(tid);
+        }
     }
 
     @RabbitListener(queues = CommentLikeExchange.QUEUE_COMMENT_LIKE_NOTIFICATION)

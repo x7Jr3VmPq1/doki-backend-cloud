@@ -5,4 +5,7 @@ public class SocialFollowExchange {
     public static final String FANOUT_EXCHANGE_SOCIAL_FOLLOW = "social.follow.exchange";
     // 定义社交关系关注队列
     public static final String QUEUE_SOCIAL_FOLLOW_NOTIFICATION = "social.follow.notification.queue";
+    // 定义社交关系时间线队列，用来添加新的时间线内容
+    public static final String QUEUE_SOCIAL_FOLLOW_TIMELINE = "social.follow.notification.timeline";
+
 }

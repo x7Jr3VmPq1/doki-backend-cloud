@@ -2,6 +2,7 @@ package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mapper.UserFollowMapper;
 import com.megrez.rabbit.exchange.SocialFollowExchange;
@@ -99,6 +100,11 @@ public class FollowService {
                 .set(UserFollow::getIsDeleted, true);
         int updated = userFollowMapper.update(updateWrapper);
         if (updated > 0) {
+            UserFollow userFollow = userFollowMapper.selectOne(new LambdaQueryWrapper<UserFollow>()
+                    .eq(UserFollow::getFollowerId, userId)
+                    .eq(UserFollow::getFollowingId, targetId));
+            // 发送消息
+            rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW, "", userFollow);
             return Result.success(null);
         }
         return Result.error(Response.UNKNOWN_WRONG);
