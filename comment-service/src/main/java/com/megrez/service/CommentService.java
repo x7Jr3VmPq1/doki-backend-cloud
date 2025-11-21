@@ -348,16 +348,22 @@ public class CommentService {
 
     public Result<SingleCommentVO> getSingle(Integer userId, String cid) {
 
-        VideoComments videoComment = mongoTemplate.findById(cid, VideoComments.class);
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(cid)
+                .and("isDeleted").is(false));  // 只查询未被逻辑删除的记录
 
+        VideoComments videoComment = mongoTemplate.findOne(query, VideoComments.class);
+
+        if (videoComment == null) {
+            return Result.success(null);
+        }
 
         // 如果它不是一条根评论，查询一下它在父评论中页码的位置
         int pageNum = -1;
-        assert videoComment != null;
         if (!videoComment.getIsRoot()) {
             String pid = videoComment.getParentCommentId();
 
-            Query query = new Query();
+            query = new Query();
             query.addCriteria(Criteria.where("parentCommentId").is(pid)
                     .and("createdAt").lt(videoComment.getCreatedAt()));
             long countBefore = mongoTemplate.count(query, VideoComments.class);
@@ -366,14 +372,19 @@ public class CommentService {
             pageNum = (int) (countBefore / pageSize) + 1;
 
             // 如果是次级评论，则最后返回的是它的根评论。
-            videoComment = mongoTemplate.findById(pid, VideoComments.class);
+            query = new Query();
+            query.addCriteria(Criteria.where("_id").is(pid)
+                    .and("isDeleted").is(false));  // 只查询未被逻辑删除的记录
+            videoComment = mongoTemplate.findOne(query, VideoComments.class);
         }
 
         if (videoComment == null) {
             return Result.success(null);
         }
 
-        CommentLike liked = mongoTemplate.findOne(new Query(Criteria.where("commentId").is(cid).and("userId").is(userId)), CommentLike.class);
+        query = new Query(Criteria.where("commentId")
+                .is(cid).and("userId").is(userId));
+        CommentLike liked = mongoTemplate.findOne(query, CommentLike.class);
 
         Integer commentUserId = videoComment.getUserId();
 

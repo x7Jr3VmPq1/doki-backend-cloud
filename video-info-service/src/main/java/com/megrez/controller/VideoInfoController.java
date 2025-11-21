@@ -136,7 +136,7 @@ public class VideoInfoController {
      */
     @GetMapping("/recent/favorites")
     public Result<List<Video>> getRecentFavorites(@CurrentUser Integer userId,
-                                            @RequestParam Integer count) {
+                                                  @RequestParam Integer count) {
         return videoInfoService.getRecentFavorites(userId, 3);
     }
 
@@ -149,7 +149,7 @@ public class VideoInfoController {
      */
     @GetMapping("/recent/histories")
     public Result<List<Video>> getRecentHistories(@CurrentUser Integer userId,
-                                            @RequestParam Integer count) {
+                                                  @RequestParam Integer count) {
         return videoInfoService.getRecentHistories(userId, 3);
     }
 
@@ -162,7 +162,17 @@ public class VideoInfoController {
      */
     @GetMapping("/recent/works")
     public Result<List<Video>> getRecentWorks(@CurrentUser Integer userId,
-                                        @RequestParam Integer count) {
+                                              @RequestParam Integer count) {
         return videoInfoService.getRecentWorks(userId, 3);
+    }
+
+    /**
+     * 获取随机视频
+     *
+     * @return
+     */
+    @GetMapping("/random")
+    public Result<List<VideoVO>> getRandomVideos(@CurrentUser(required = false) Integer userId) {
+        return videoInfoService.randomVideo(userId);
     }
 }

@@ -56,4 +56,19 @@ public class RecordService {
         );
         return Result.success(videoLikes);
     }
+
+    public Result<List<VideoLikes>> getRecordsByBatchVIds(Integer uid, List<Integer> vid) {
+        if (uid <= 0 || vid.isEmpty()) {
+            return Result.success(List.of());
+        }
+        LambdaQueryWrapper<VideoLikes> wrapper = new LambdaQueryWrapper<>();
+        // 用户ID
+        wrapper.eq(VideoLikes::getUserId, uid);
+        // 在这些记录中
+        wrapper.in(VideoLikes::getVideoId, vid);
+
+        List<VideoLikes> videoLikes = likeMapper.selectList(wrapper);
+
+        return Result.success(videoLikes);
+    }
 }

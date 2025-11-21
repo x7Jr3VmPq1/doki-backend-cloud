@@ -49,4 +49,16 @@ public interface LikeFavoriteClient {
     @GetMapping("/records/count")
     Result<List<VideoLikes>> getRecordsByCount(@RequestParam("userId") Integer userId,
                                                @RequestParam("count") Integer count);
+
+
+    /**
+     * 根据用户ID和视频ID批量判断是否存在点赞
+     *
+     * @param uid 用户ID
+     * @param vid 视频ID
+     * @return 点赞记录
+     */
+    @GetMapping("/records/batch")
+    Result<List<VideoLikes>> getRecordsByBatchVIds(@RequestParam("uid") Integer uid,
+                                                   @RequestParam("vid") List<Integer> vid);
 }

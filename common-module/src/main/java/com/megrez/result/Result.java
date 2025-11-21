@@ -1,11 +1,16 @@
 package com.megrez.result;
 
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 // 统一响应结构
 @Data
 public class Result<T> {
 
+    private static final Logger log = LoggerFactory.getLogger(Result.class);
     int code; // 状态码
     String msg; // 提示信息
     T data; // 响应数据
@@ -43,5 +48,22 @@ public class Result<T> {
     // 判断操作是否成功方法
     public boolean isSuccess() {
         return this.code == Response.SUCCESS.getCode();
+    }
+
+    // 批量判断若干调用是否成功
+    public static boolean allSuccess(List<Result<?>> results) {
+        if (results == null || results.isEmpty()) {
+            return false; // 没有结果，认为不成功
+        }
+        for (Result<?> result : results) {
+            if (result == null) {
+                return false;
+            }
+            if (!result.isSuccess()) {
+                log.error("服务调用发生错误：{}", result.getMsg());
+                return false;
+            }
+        }
+        return true;
     }
 }

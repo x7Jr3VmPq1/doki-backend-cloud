@@ -6,6 +6,7 @@ import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mapper.UserFollowMapper;
 import com.megrez.rabbit.exchange.SocialFollowExchange;
+import com.megrez.redis.SocialRedisClient;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
@@ -29,10 +30,12 @@ public class FollowService {
     private static final Logger log = LoggerFactory.getLogger(FollowService.class);
     private final UserFollowMapper userFollowMapper;
     private final RabbitMQUtils rabbitMQUtils;
+    private final SocialRedisClient redisClient;
 
-    public FollowService(UserFollowMapper userFollowMapper, RabbitMQUtils rabbitMQUtils) {
+    public FollowService(UserFollowMapper userFollowMapper, RabbitMQUtils rabbitMQUtils, SocialRedisClient redisClient) {
         this.userFollowMapper = userFollowMapper;
         this.rabbitMQUtils = rabbitMQUtils;
+        this.redisClient = redisClient;
     }
 
     /**
@@ -47,37 +50,30 @@ public class FollowService {
         if (userId.equals(targetId)) {
             return Result.success(null);
         }
-        try {
-            // 先尝试更新，如果没成功再插入新纪录。
-            UserFollow build = UserFollow.builder().followerId(userId).followingId(targetId).build();
-            LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<UserFollow>()
-                    .eq(UserFollow::getFollowerId, userId)
-                    .eq(UserFollow::getFollowingId, targetId)
-                    .set(UserFollow::getUpdatedAt, System.currentTimeMillis())
-                    .set(UserFollow::getIsDeleted, false);
-            int updated = userFollowMapper.update(updateWrapper);
-            if (updated == 0) {
-                userFollowMapper.insert(build);
-            }
-            // 发送消息
-            rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW,
-                    "",
-                    JSONUtils.toJSON(build));
-            // 返回操作结果
-            return Result.success(null);
-        } catch (DuplicateKeyException e) {
-            // 唯一约束
-            log.warn("用户 {} 已经关注用户 {}", userId, targetId, e);
-            return Result.error(Response.SOCIAL_FORBID_REPEAT_FOLLOW);
-        } catch (DataIntegrityViolationException e) {
-            // 外键约束
-            log.warn("用户 {} 关注 {} 失败：没找到这个用户。", userId, targetId, e);
-            return Result.error(Response.USER_NOT_FOUND_WRONG);
-        } catch (Exception e) {
-            // 其它错误返回未知异常
-            log.error("写入关注表数据库发生异常。", e);
-            return Result.error(Response.UNKNOWN_WRONG);
+
+        // 先尝试更新，如果没成功再插入新纪录。
+        UserFollow build = UserFollow.builder().followerId(userId).followingId(targetId).build();
+        LambdaUpdateWrapper<UserFollow> updateWrapper = new LambdaUpdateWrapper<UserFollow>()
+                .eq(UserFollow::getFollowerId, userId)
+                .eq(UserFollow::getFollowingId, targetId)
+                .set(UserFollow::getUpdatedAt, System.currentTimeMillis())
+                .set(UserFollow::getIsDeleted, false);
+        int updated = userFollowMapper.update(updateWrapper);
+        if (updated == 0) {
+            // 写入主库
+            userFollowMapper.insert(build);
         }
+
+        // 写入缓存
+        redisClient.addFollowing(userId, targetId);
+
+        // 发送消息
+        rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW,
+                "",
+                JSONUtils.toJSON(build));
+        // 返回操作结果
+        return Result.success(null);
+
     }
 
     /**
@@ -100,11 +96,14 @@ public class FollowService {
                 .set(UserFollow::getIsDeleted, true);
         int updated = userFollowMapper.update(updateWrapper);
         if (updated > 0) {
+            // 清理缓存
+            redisClient.removeFollowing(userId, targetId);
+            // 重新查询关注数据
             UserFollow userFollow = userFollowMapper.selectOne(new LambdaQueryWrapper<UserFollow>()
                     .eq(UserFollow::getFollowerId, userId)
                     .eq(UserFollow::getFollowingId, targetId));
             // 发送消息
-            rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW, "", userFollow);
+            rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW, "", JSONUtils.toJSON(userFollow));
             return Result.success(null);
         }
         return Result.error(Response.UNKNOWN_WRONG);

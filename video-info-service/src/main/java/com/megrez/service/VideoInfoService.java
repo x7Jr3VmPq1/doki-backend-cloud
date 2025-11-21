@@ -13,6 +13,7 @@ import com.megrez.result.Response;
 import com.megrez.result.Result;
 import com.megrez.utils.CollectionUtils;
 import com.megrez.utils.PageTokenUtils;
+import com.megrez.utils.VideoUtils;
 import com.megrez.vo.CursorLoad;
 import com.megrez.vo.analytics_service.VideoHistory;
 import com.megrez.vo.analytics_service.VideoWatched;
@@ -37,13 +38,15 @@ public class VideoInfoService {
     private final AnalyticsServiceClient analyticsServiceClient;
     private final UserServiceClient userServiceClient;
     private final SocialServiceClient socialServiceClient;
+    private final VideoUtils videoUtils;
 
-    public VideoInfoService(VideoMapper videoMapper, LikeFavoriteClient likeFavoriteClient, AnalyticsServiceClient analyticsServiceClient, UserServiceClient userServiceClient, SocialServiceClient socialServiceClient) {
+    public VideoInfoService(VideoMapper videoMapper, LikeFavoriteClient likeFavoriteClient, AnalyticsServiceClient analyticsServiceClient, UserServiceClient userServiceClient, SocialServiceClient socialServiceClient, VideoUtils videoUtils) {
         this.videoMapper = videoMapper;
         this.likeFavoriteClient = likeFavoriteClient;
         this.analyticsServiceClient = analyticsServiceClient;
         this.userServiceClient = userServiceClient;
         this.socialServiceClient = socialServiceClient;
+        this.videoUtils = videoUtils;
     }
 
     /**
@@ -87,7 +90,6 @@ public class VideoInfoService {
             return Result.success(CursorLoad.empty());
         }
 
-
         boolean hasMore = false;
         cursor = null;
         if (videos.size() > 20) {
@@ -95,27 +97,7 @@ public class VideoInfoService {
             videos = videos.subList(0, videos.size() - 1);
         }
 
-        List<Integer> ids = videos.stream().map(Video::getId).toList();
-        // 查询统计信息
-        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(ids);
-        List<VideoStatistics> statisticsList;
-        if (videoStatById.isSuccess()) {
-            statisticsList = videoStatById.getData();
-        } else {
-            throw new Exception(videoStatById.getMsg());
-        }
-
-        Map<Integer, VideoStatistics> statisticsMap = statisticsList.stream().collect(Collectors.toMap(VideoStatistics::getVideoId, Function.identity()));
-
-
-        List<VideoVO> list = videos.stream().map(video -> {
-            VideoVO videoVO = new VideoVO();
-            BeanUtils.copyProperties(video, videoVO);
-            videoVO.setStatistics(statisticsMap.get(video.getId()));
-            videoVO.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + videoVO.getCoverName());
-            videoVO.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + videoVO.getVideoFilename());
-            return videoVO;
-        }).toList();
+        List<VideoVO> list = videoUtils.batchToVO(uid, videos);
 
         if (hasMore) {
             cursor = PageTokenUtils.encryptState(list.get(list.size() - 1));
@@ -141,28 +123,11 @@ public class VideoInfoService {
         if (ids.isEmpty()) {
             return Result.success(CursorLoad.empty());
         }
-        // 3. 查询视频统计信息
-        List<VideoStatistics> statistics = List.of();
-        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(ids);
-        if (videoStatById.isSuccess()) {
-            statistics = videoStatById.getData();
-        }
-        // 4. 查询视频信息
+        // 查询视频信息
         LambdaQueryWrapper<Video> query = new LambdaQueryWrapper<Video>().in(Video::getId, ids);
         List<Video> videos = videoMapper.selectList(query);
 
-        // 5. 组装数据
-        Map<Integer, VideoStatistics> statisticsMap = statistics.stream().collect(Collectors.toMap(VideoStatistics::getVideoId, Function.identity()));
-        Map<Integer, Video> videoMap = videos.stream().collect(Collectors.toMap(Video::getId, Function.identity()));
-
-        List<VideoVO> list = ids.stream().map(id -> {
-            VideoVO videoVO = new VideoVO();
-            BeanUtils.copyProperties(Objects.requireNonNullElse(videoMap.get(id), new Video()), videoVO);
-            videoVO.setStatistics(statisticsMap.get(id));
-            videoVO.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + videoVO.getVideoFilename());
-            videoVO.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + videoVO.getCoverName());
-            return videoVO;
-        }).toList();
+        List<VideoVO> list = videoUtils.batchToVO(userId, videos);
 
         return Result.success(CursorLoad.of(list, hasMore, cursor));
     }
@@ -181,33 +146,8 @@ public class VideoInfoService {
         List<Integer> videoIds = CollectionUtils.toList(videoHistories, VideoHistory::getVideoId);
         // 3. 查询视频信息
         List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, videoIds));
-        // 4. 查询统计数据
-        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(videoIds);
-        // 5. 查询观看时长
-        Result<List<VideoWatched>> videoWatched = analyticsServiceClient.getVideoWatched(userId, videoIds);
-        if (!videoStatById.isSuccess() || !videoWatched.isSuccess()) {
-            return Result.error(Response.UNKNOWN_WRONG);
-        }
-        // 6. 组装数据
-        List<VideoStatistics> videoStatistics = videoStatById.getData();
-        List<VideoWatched> videoWatchedData = videoWatched.getData();
-        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
-        Map<Integer, VideoHistory> videoHistoryMap = CollectionUtils.toMap(videoHistories, VideoHistory::getVideoId);
-        Map<Integer, VideoStatistics> statisticsMap = CollectionUtils.toMap(videoStatistics, VideoStatistics::getVideoId);
-        Map<Integer, VideoWatched> videoWatchedMap = CollectionUtils.toMap(videoWatchedData, VideoWatched::getVideoId);
-        List<VideoVO> list = videoIds.stream().map(id -> {
-            VideoVO vo = new VideoVO();
-            Video video = videoMap.get(id);
-            VideoStatistics stat = statisticsMap.get(id);
-            VideoWatched watched = videoWatchedMap.get(id);
-            BeanUtils.copyProperties(video, vo);
-            vo.setStatistics(stat);
-            vo.setWatchedTime(watched.getTime());
-            vo.setWatchedAt(videoHistoryMap.get(id).getCreatedAt());
-            vo.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + vo.getVideoFilename());
-            vo.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + vo.getCoverName());
-            return vo;
-        }).toList();
+
+        List<VideoVO> list = videoUtils.batchToVO(userId, videos);
 
         boolean hasMore = false;
         cursor = null;
@@ -225,65 +165,20 @@ public class VideoInfoService {
             return Result.success(List.of());
         }
         List<Video> videos = getVideos(vid);
-
         return Result.success(videos);
     }
 
     public Result<VideoVO> getVideoInfoByIdV2(Integer userId, Integer vid) {
-        // 1. 查询视频数据
+        // 查询视频数据
         Video video = videoMapper.selectById(vid);
 
         if (video == null) {
             return Result.success(null);
         }
-        video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
-        video.setVideoFilename(GatewayHttpPath.VIDEO_PLAY + video.getVideoFilename());
-        // 2. 查询统计信息
-        Result<List<VideoStatistics>> stat = analyticsServiceClient.getVideoStatById(List.of(vid));
-        // 3. 查询上传者信息
-        Result<List<User>> userinfo = userServiceClient.getUserinfoById(List.of(video.getUploaderId()));
 
-        if (!stat.isSuccess() || !userinfo.isSuccess()) {
-            log.error("外部服务调用失败");
-            throw new RuntimeException();
-        }
+        List<VideoVO> list = videoUtils.batchToVO(userId, List.of(video));
 
-        // 4. 查询是否点赞
-        // 5. 查询上次观看时长和观看的时间
-        // 6. 查询是否关注了上传者
-        boolean liked = false;
-        boolean followed = false;
-        double watchedTime = 0;
-        long watchedAt = 0;
-        if (userId > 0) {
-            Result<Boolean> likedResult = likeFavoriteClient.existLikeRecord(userId, vid);
-            Result<List<VideoWatched>> videoWatchedResult = analyticsServiceClient.getVideoWatched(userId, List.of(vid));
-            if (!userId.equals(video.getUploaderId())) {
-                Result<List<UserFollow>> follow = socialServiceClient.checkFollow(new CheckFollowDTO(userId, List.of(video.getUploaderId())));
-                if (!follow.isSuccess()) {
-                    log.error("关系服务调用失败");
-                    throw new RuntimeException();
-                }
-                followed = !follow.getData().isEmpty(); // 如果为空，说明没有关注
-            }
-            if (!likedResult.isSuccess() || !videoWatchedResult.isSuccess()) {
-                log.error("外部服务调用失败");
-                throw new RuntimeException();
-            }
-            liked = likedResult.getData();
-            watchedTime = videoWatchedResult.getData().get(0).getTime();
-
-        }
-        // 7. 聚合
-        VideoVO vo = new VideoVO();
-        BeanUtils.copyProperties(video, vo);
-        vo.setStatistics(stat.getData().get(0));
-        vo.setUser(userinfo.getData().get(0));
-        vo.setLiked(liked);
-        vo.setFollowed(followed);
-        vo.setWatchedTime(watchedTime);
-        vo.setWatchedAt(watchedAt);
-        return Result.success(vo);
+        return Result.success(list.get(0));
     }
 
     public Result<List<Video>> getRecentLikes(Integer userId, int count) {
@@ -359,6 +254,13 @@ public class VideoInfoService {
             video.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + video.getCoverName());
         });
         return videos;
+    }
+
+    public Result<List<VideoVO>> randomVideo(Integer uid) {
+        List<Video> videos = videoMapper.getRandomVideo();
+
+        List<VideoVO> list = videoUtils.batchToVO(uid, videos);
+        return Result.success(list);
     }
 
 

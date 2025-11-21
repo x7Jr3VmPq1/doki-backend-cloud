@@ -18,6 +18,7 @@ import com.megrez.result.Result;
 import com.megrez.utils.CollectionUtils;
 import com.megrez.vo.search_service.SearchVO;
 import com.megrez.vo.user_service.UsersVO;
+import com.megrez.vo.video_info_service.VideoVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -49,14 +50,16 @@ public class SearchService {
     private final VideoInfoClient videoInfoClient;
     private final AnalyticsServiceClient analyticsServiceClient;
     private final SocialServiceClient socialServiceClient;
+    private final VideoUtils videoUtils;
 
-    public SearchService(SearchHistoryMapper mapper, ElasticsearchOperations operations, UserServiceClient userServiceClient, VideoInfoClient videoInfoClient, AnalyticsServiceClient analyticsServiceClient, SocialServiceClient socialServiceClient) {
+    public SearchService(SearchHistoryMapper mapper, ElasticsearchOperations operations, UserServiceClient userServiceClient, VideoInfoClient videoInfoClient, AnalyticsServiceClient analyticsServiceClient, SocialServiceClient socialServiceClient, VideoUtils videoUtils) {
         this.mapper = mapper;
         this.operations = operations;
         this.userServiceClient = userServiceClient;
         this.videoInfoClient = videoInfoClient;
         this.analyticsServiceClient = analyticsServiceClient;
         this.socialServiceClient = socialServiceClient;
+        this.videoUtils = videoUtils;
     }
 
     /**
@@ -169,36 +172,31 @@ public class SearchService {
                 .map(SearchHit::getContent)
                 .toList();
 
-        // 提取出视频ID和用户ID
+        // 提取出视频ID
         List<Integer> vIds = results.stream().map(document -> Integer.parseInt(document.getId())).toList();
-        List<Integer> uIds = results.stream().map(VideoESDocument::getUserId).toList();
 
         Result<List<Video>> videoInfoByIds = videoInfoClient.getVideoInfoByIds(vIds);
-        Result<List<VideoStatistics>> videoStatById = analyticsServiceClient.getVideoStatById(vIds);
-        Result<List<User>> userinfoById = userServiceClient.getUserinfoById(uIds);
 
-        if (!videoInfoByIds.isSuccess() || !videoStatById.isSuccess() || !userinfoById.isSuccess()) {
-            log.error("搜索服务故障：外部服务调用失败");
-            throw new RuntimeException();
-        }
+        List<VideoVO> videoVOList = videoUtils.batchToVO(userId, videoInfoByIds.getData());
 
-        Map<Integer, Video> videoMap = CollectionUtils.toMap(videoInfoByIds.getData(), Video::getId);
-        Map<Integer, VideoStatistics> statisticsMap = CollectionUtils.toMap(videoStatById.getData(), VideoStatistics::getVideoId);
-        Map<Integer, User> userMap = CollectionUtils.toMap(userinfoById.getData(), User::getId);
+        Map<Integer, VideoVO> videoVOMap = CollectionUtils.toMap(videoVOList, VideoVO::getId);
 
         List<SearchVO> list = hits.stream().map(hit -> {
 
             String highlightedTitle = null;
+
             if (hit.getHighlightFields().containsKey("title")) {
                 highlightedTitle = hit.getHighlightFields().get("title").get(0);
             }
+
             VideoESDocument document = hit.getContent();
 
             int vid = Integer.parseInt(document.getId());
-            Video video = videoMap.get(vid);
-            VideoStatistics videoStatistics = statisticsMap.get(vid);
-            User user = userMap.get(document.getUserId());
-            return new SearchVO(video, user, videoStatistics, highlightedTitle);
+
+            VideoVO videoVO = videoVOMap.get(vid);
+
+            return new SearchVO(videoVO, highlightedTitle);
+
         }).toList();
 
         return Result.success(list);

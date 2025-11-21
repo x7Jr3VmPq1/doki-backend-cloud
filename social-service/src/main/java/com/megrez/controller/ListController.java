@@ -29,10 +29,11 @@ public class ListController {
      * 获取关注或粉丝列表。/followings = 查询关注列表，/followers = 查询粉丝列表
      * 支持游标加载。
      *
-     * @param userId 当前用户ID，必须
-     * @param tid    目标用户ID，必须
-     * @param cursor 分页游标
-     * @param mode   模式， 1=综合排序，2=最近关注，3=最早关注，必须
+     * @param userId       当前用户ID，必须
+     * @param tid          目标用户ID，必须
+     * @param cursor       分页游标
+     * @param mode         模式， 1=综合排序，2=最近关注，3=最早关注，必须
+     * @param leastOneWork 传入大于0的参数，表示返回至少有一个作品的用户
      * @return 粉丝列表。
      */
     @GetMapping({"/followings", "/followers"})
@@ -40,6 +41,7 @@ public class ListController {
             HttpServletRequest request,
             @CurrentUser Integer userId,
             @RequestParam("tid") Integer tid,
+            @RequestParam(value = "leastOneWork", required = false) Integer leastOneWork,
             @RequestParam(value = "cursor", required = false) String cursor,
             @RequestParam("mode") Integer mode) throws Exception {
         if (mode < 1 || mode > 3) {

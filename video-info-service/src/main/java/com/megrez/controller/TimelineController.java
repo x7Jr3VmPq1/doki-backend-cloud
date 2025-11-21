@@ -1,6 +1,7 @@
 package com.megrez.controller;
 
 import com.megrez.annotation.CurrentUser;
+import com.megrez.mysql_entity.Video;
 import com.megrez.result.Result;
 import com.megrez.service.TimelineService;
 import com.megrez.vo.video_info_service.VideoVO;
