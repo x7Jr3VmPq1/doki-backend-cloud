@@ -76,8 +76,8 @@ public class VideoHistoryController {
      * @return 时长记录
      */
     @GetMapping("/watched")
-    public Result<List<VideoWatched>> getVideoWatched(@RequestParam Integer userId,
-                                                      @RequestParam List<Integer> videoId) {
+    public Result<List<VideoWatched>> getVideoWatched(@RequestParam("userId") Integer userId,
+                                                      @RequestParam("videoId") List<Integer> videoId) {
         log.info("查询观看时长，用户ID：{},视频ID：{}", userId, videoId);
         return videoHistoryService.getVideoWatched(userId, videoId);
     }
@@ -88,6 +88,5 @@ public class VideoHistoryController {
             @RequestParam(required = false) Integer close) {
         log.info("清空历史记录，UID:{}", userId);
         return videoHistoryService.clearVideoHistory(userId, close);
-
     }
 }
