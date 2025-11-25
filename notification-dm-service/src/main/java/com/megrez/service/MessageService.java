@@ -209,7 +209,7 @@ public class MessageService {
      * @return 未读数
      */
     public Result<Integer> getUnreadCount(Integer userId) {
-        return Result.success(redisClient.getUnreadTotal(userId));
+        return Result.success(redisClient.getDMUnreadTotal(userId));
     }
 
     /**
@@ -221,9 +221,9 @@ public class MessageService {
      */
     public Result<Void> clearUnreadCount(Integer userId, String cid) {
         if (cid != null && !cid.isEmpty()) {
-            redisClient.clearSingleUnread(userId, cid);
+            redisClient.clearSingleDMUnread(userId, cid);
         } else {
-            redisClient.clearAllUnread(userId);
+            redisClient.clearAllDMUnread(userId);
         }
         return Result.success(null);
     }

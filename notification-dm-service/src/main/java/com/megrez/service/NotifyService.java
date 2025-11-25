@@ -3,13 +3,16 @@ package com.megrez.service;
 import com.megrez.client.UserServiceClient;
 import com.megrez.client.VideoInfoClient;
 import com.megrez.mongo_document.Notification;
+import com.megrez.mongo_document.VideoComments;
 import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mysql_entity.Video;
+import com.megrez.rabbit.exchange.CommentAddExchange;
 import com.megrez.rabbit.exchange.CommentLikeExchange;
 import com.megrez.rabbit.exchange.SocialFollowExchange;
 import com.megrez.rabbit.exchange.VideoLikeExchange;
 
+import com.megrez.rabbit.message.CommentAddMessage;
 import com.megrez.rabbit.message.CommentLikeMessage;
 import com.megrez.rabbit.message.VideoLikeMessage;
 import com.megrez.redis.NotifyAndDMRedisClient;
@@ -18,6 +21,7 @@ import com.megrez.result.Result;
 import com.megrez.utils.CollectionUtils;
 import com.megrez.utils.JSONUtils;
 import com.megrez.vo.notification_dm_service.NotificationVO;
+import com.megrez.vo.video_info_service.VideoVO;
 import com.mongodb.client.MongoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +33,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -43,14 +44,12 @@ public class NotifyService {
     private final VideoInfoClient videoInfoClient;
     private final NotifyAndDMRedisClient redisClient;
     private final UserServiceClient userServiceClient;
-    private final MongoClient mongo;
 
     public NotifyService(MongoTemplate mongoTemplate, VideoInfoClient videoInfoClient, NotifyAndDMRedisClient redisClient, UserServiceClient userServiceClient, MongoClient mongo) {
         this.mongoTemplate = mongoTemplate;
         this.videoInfoClient = videoInfoClient;
         this.redisClient = redisClient;
         this.userServiceClient = userServiceClient;
-        this.mongo = mongo;
     }
 
 
@@ -165,8 +164,12 @@ public class NotifyService {
 
     @RabbitListener(queues = CommentLikeExchange.QUEUE_COMMENT_LIKE_NOTIFICATION)
     public void insertByCommentLike(String message) {
+
         CommentLikeMessage commentLikeMessage = JSONUtils.fromJSON(message, CommentLikeMessage.class);
 
+        if (commentLikeMessage.getUserId().equals(commentLikeMessage.getCommentSender())) {
+            return;
+        }
         //
         Integer targetUserId = commentLikeMessage.getCommentSender();
         Notification notification = Notification.builder()
@@ -178,5 +181,73 @@ public class NotifyService {
                 .sourceVideoId(commentLikeMessage.getVideoId())
                 .groupKey(targetUserId + "-3-" + commentLikeMessage.getCommentId()).build();
         mongoTemplate.insert(notification);
+        // 给被通知者的通知未读数 + 1
+        redisClient.incNotifyUnread(commentLikeMessage.getCommentSender());
+    }
+
+
+    @RabbitListener(queues = CommentAddExchange.QUEUE_COMMENT_ADD_NOTIFICATION)
+    public void insertByCommentAdd(String message) {
+        CommentAddMessage commentAddMessage = JSONUtils.fromJSON(message, CommentAddMessage.class);
+
+        VideoComments comment = commentAddMessage.getVideoComments();
+
+        Integer videoId = comment.getVideoId();
+
+        Integer targetUID = null;
+        int type = 0;
+
+        // 查询评论的视频信息
+        Result<VideoVO> videoInfo = videoInfoClient.getVideoInfoByIdV2(videoId);
+        if (!videoInfo.isSuccess()) {
+            log.info("视频信息服务调用失败...");
+            throw new RuntimeException();
+        }
+        VideoVO videoInfoData = videoInfo.getData();
+
+        // 1. 自己回复自己的视频，不发送通知。
+        if (videoInfoData.getUploaderId().equals(comment.getUserId())) {
+            return;
+        }
+        // 2. 评论是根评论，则通知到视频上传者
+        if (comment.getIsRoot()) {
+            targetUID = videoInfoData.getUploaderId();
+            type = 4;
+        } else {
+            VideoComments result = mongoTemplate.findById(comment.getReplyTargetId(), VideoComments.class);
+            // 3. 自己回复自己的评论，不发送通知。
+            assert result != null;
+            if (result.getUserId().equals(comment.getUserId())) {
+                return;
+            }
+            // 4. 评论是回复评论，则通知到目标评论的发表者
+            targetUID = result.getUserId();
+            type = 5;
+        }
+
+        // 构建消息
+        Notification notification = Notification.builder()
+                .userId(targetUID)
+                .content(comment.getContent())
+                .operatorId(comment.getUserId())
+                .type(type)
+                .sourceCommentId(comment.getId())
+                .sourceVideoId(comment.getVideoId())
+                .groupKey(targetUID + "-" + type + "-" + comment.getId()).build();
+        mongoTemplate.insert(notification);
+        // 给被通知者的通知未读数 + 1
+        redisClient.incNotifyUnread(targetUID);
+
+    }
+
+    public Result<Integer> getUnreadCount(Integer uid) {
+        Integer unreadTotal = redisClient.getNotifyUnreadTotal(uid);
+        return Result.success(unreadTotal);
+    }
+
+
+    public Result<Void> delUnreadCount(Integer uid) {
+        redisClient.delNotifyUnreadCount(uid);
+        return Result.success(null);
     }
 }

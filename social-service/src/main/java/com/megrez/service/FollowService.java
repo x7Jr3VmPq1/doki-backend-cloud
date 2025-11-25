@@ -73,6 +73,7 @@ public class FollowService {
         rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW,
                 "",
                 JSONUtils.toJSON(build));
+        log.info("发送消息：{},{}", userId, targetId);
         rabbitMQUtils.sendMessage(CountEventExchange.DIRECT_EXCHANGE_COUNT,
                 CountEventExchange.RK_FOLLOW,
                 new CountMessage(userId, 1));

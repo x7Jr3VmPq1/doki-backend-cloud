@@ -5,10 +5,7 @@ import com.megrez.mongo_document.Notification;
 import com.megrez.result.Result;
 import com.megrez.service.NotifyService;
 import com.megrez.vo.notification_dm_service.NotificationVO;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -34,5 +31,17 @@ public class NotifyController {
     public Result<List<NotificationVO>> get(@CurrentUser Integer userId,
                                             @RequestParam(value = "type", required = false) Integer type) {
         return notifyService.getNotifications(userId, type);
+    }
+
+
+    @GetMapping("/unread")
+    public Result<Integer> getUnreadCount(@CurrentUser Integer uid){
+        return notifyService.getUnreadCount(uid);
+    }
+
+
+    @DeleteMapping("/unread")
+    public Result<Void> delUnreadCount(@CurrentUser Integer uid){
+        return notifyService.delUnreadCount(uid);
     }
 }

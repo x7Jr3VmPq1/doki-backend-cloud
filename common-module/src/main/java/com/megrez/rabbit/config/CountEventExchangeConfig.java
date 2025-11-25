@@ -95,6 +95,6 @@ public class CountEventExchangeConfig {
     public Binding followedBinding() {
         return BindingBuilder.bind(followedQueue())
                 .to(countEventExchange())
-                .with(CountEventExchange.RK_FOLLOW);
+                .with(CountEventExchange.RK_FOLLOWED);
     }
 }

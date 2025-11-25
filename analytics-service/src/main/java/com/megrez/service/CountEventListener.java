@@ -31,6 +31,7 @@ public class CountEventListener {
 
     @RabbitListener(queues = CountEventExchange.FOLLOW)
     public void follow(CountMessage message) {
+        log.info("增加关注数： {}", message);
         if (!check(message))
             return;
         LambdaUpdateWrapper<UserStatistics> updateWrapper = new LambdaUpdateWrapper<UserStatistics>()
@@ -38,7 +39,7 @@ public class CountEventListener {
                 .eq(UserStatistics::getUserId, message.getUid());
 
         if (message.getCount() < 0) {
-            updateWrapper.gt(UserStatistics::getFollowerCount, 0);
+            updateWrapper.gt(UserStatistics::getFollowingCount, 0);
         }
 
         userStatisticsMapper.update(updateWrapper);
@@ -46,13 +47,19 @@ public class CountEventListener {
 
     @RabbitListener(queues = CountEventExchange.FOLLOWED)
     public void followed(CountMessage message) {
+        log.info("增加被关注数： {}", message);
+
         if (!check(message))
             return;
 
         LambdaUpdateWrapper<UserStatistics> updateWrapper = new LambdaUpdateWrapper<UserStatistics>()
                 .setSql("follower_count = follower_count + " + message.getCount())
-                .gt(UserStatistics::getFollowerCount, 0)
                 .eq(UserStatistics::getUserId, message.getUid());
+
+        if (message.getCount() < 0) {
+            updateWrapper.gt(UserStatistics::getFollowerCount, 0);
+        }
+
         userStatisticsMapper.update(updateWrapper);
     }
 }

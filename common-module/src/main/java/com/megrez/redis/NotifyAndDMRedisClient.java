@@ -52,9 +52,26 @@ public class NotifyAndDMRedisClient {
         return map;
     }
 
-    public Integer getUnreadTotal(Integer uid) {
+    /**
+     * 获取私信未读数
+     *
+     * @param uid 用户id
+     * @return 私信未读数
+     */
+    public Integer getDMUnreadTotal(Integer uid) {
         Object count = redisTemplate.opsForHash().get(DM_UNREAD_KEY + uid, "total");
         return count == null ? 0 : Integer.parseInt(count.toString());
+    }
+
+    /**
+     * 获取通知未读数
+     *
+     * @param uid 用户id
+     * @return 私信未读数
+     */
+    public Integer getNotifyUnreadTotal(Integer uid) {
+        String number = redisTemplate.opsForValue().get(NOTIFY_UNREAD_KEY + uid);
+        return number == null ? 0 : Integer.parseInt(number);
     }
 
     /**
@@ -63,7 +80,7 @@ public class NotifyAndDMRedisClient {
      * @param uid 用户id
      * @param cid 会话id
      */
-    public void clearSingleUnread(Integer uid, String cid) {
+    public void clearSingleDMUnread(Integer uid, String cid) {
         Map<String, Integer> map = getUnread(uid, List.of(cid));
         Integer unread = map.get(cid);
         redisTemplate.opsForHash().delete(DM_UNREAD_KEY + uid, cid);
@@ -75,7 +92,7 @@ public class NotifyAndDMRedisClient {
      *
      * @param uid 用户id
      */
-    public void clearAllUnread(Integer uid) {
+    public void clearAllDMUnread(Integer uid) {
         redisTemplate.delete(DM_UNREAD_KEY + uid);
     }
 
@@ -86,5 +103,14 @@ public class NotifyAndDMRedisClient {
      */
     public void incNotifyUnread(Integer uid) {
         redisTemplate.opsForValue().increment(NOTIFY_UNREAD_KEY + uid);
+    }
+
+    /**
+     * 清空通知未读数
+     *
+     * @param uid 目标用户ID
+     */
+    public void delNotifyUnreadCount(Integer uid) {
+        redisTemplate.delete(NOTIFY_UNREAD_KEY + uid);
     }
 }
