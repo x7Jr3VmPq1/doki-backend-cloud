@@ -37,7 +37,11 @@ public class VideoHistoryService {
 
     public Result<List<VideoHistory>> getVideoHistoryByCount(Integer userId, Integer count) {
         List<VideoHistory> history = analyticsRedisClient.getHistory(userId, (double) System.currentTimeMillis());
-        List<VideoHistory> videoHistories = history.subList(0, count);
+
+        List<VideoHistory> videoHistories;
+
+        videoHistories = history.size() > count ? history.subList(0, count) : history;
+
         return Result.success(videoHistories);
     }
 }

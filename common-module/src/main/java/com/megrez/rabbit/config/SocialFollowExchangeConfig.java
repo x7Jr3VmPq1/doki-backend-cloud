@@ -30,7 +30,6 @@ public class SocialFollowExchangeConfig {
         return new Queue(SocialFollowExchange.QUEUE_SOCIAL_FOLLOW_TIMELINE, true);
     }
 
-
     // 绑定通知队列到交换机
     @Bean
     public Binding bindingSocialFollowNotificationQueueToExchange(

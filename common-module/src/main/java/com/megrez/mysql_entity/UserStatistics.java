@@ -26,6 +26,12 @@ public class UserStatistics {
 
     private Integer likeCount = 0;
 
+    private Integer worksCount = 0;
+
+    private Integer favoriteCount = 0;
+
+    private Integer historyCount = 0;
+
     private long createdAt = System.currentTimeMillis();
 
     private long updatedAt = System.currentTimeMillis();

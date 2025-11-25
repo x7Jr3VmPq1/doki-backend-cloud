@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.UserFollow;
 import com.megrez.mapper.UserFollowMapper;
+import com.megrez.rabbit.exchange.CountEventExchange;
 import com.megrez.rabbit.exchange.SocialFollowExchange;
+import com.megrez.rabbit.message.CountMessage;
 import com.megrez.redis.SocialRedisClient;
 import com.megrez.result.Response;
 import com.megrez.result.Result;
@@ -71,6 +73,12 @@ public class FollowService {
         rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW,
                 "",
                 JSONUtils.toJSON(build));
+        rabbitMQUtils.sendMessage(CountEventExchange.DIRECT_EXCHANGE_COUNT,
+                CountEventExchange.RK_FOLLOW,
+                new CountMessage(userId, 1));
+        rabbitMQUtils.sendMessage(CountEventExchange.DIRECT_EXCHANGE_COUNT,
+                CountEventExchange.RK_FOLLOWED,
+                new CountMessage(targetId, 1));
         // 返回操作结果
         return Result.success(null);
 
@@ -104,6 +112,13 @@ public class FollowService {
                     .eq(UserFollow::getFollowingId, targetId));
             // 发送消息
             rabbitMQUtils.sendMessage(SocialFollowExchange.FANOUT_EXCHANGE_SOCIAL_FOLLOW, "", JSONUtils.toJSON(userFollow));
+
+            rabbitMQUtils.sendMessage(CountEventExchange.DIRECT_EXCHANGE_COUNT,
+                    CountEventExchange.RK_FOLLOW,
+                    new CountMessage(userId, -1));
+            rabbitMQUtils.sendMessage(CountEventExchange.DIRECT_EXCHANGE_COUNT,
+                    CountEventExchange.RK_FOLLOWED,
+                    new CountMessage(targetId, -1));
             return Result.success(null);
         }
         return Result.error(Response.UNKNOWN_WRONG);

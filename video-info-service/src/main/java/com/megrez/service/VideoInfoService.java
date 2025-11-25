@@ -127,6 +127,10 @@ public class VideoInfoService {
         LambdaQueryWrapper<Video> query = new LambdaQueryWrapper<Video>().in(Video::getId, ids);
         List<Video> videos = videoMapper.selectList(query);
 
+        // 排序
+        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
+        videos = ids.stream().map(videoMap::get).filter(Objects::nonNull).toList();
+
         List<VideoVO> list = videoUtils.batchToVO(userId, videos);
 
         return Result.success(CursorLoad.of(list, hasMore, cursor));
@@ -147,6 +151,13 @@ public class VideoInfoService {
         // 3. 查询视频信息
         List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, videoIds));
 
+        // 排序
+        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
+
+        videos = videoIds.stream()
+                .map(videoMap::get)
+                .filter(Objects::nonNull)
+                .toList();
         List<VideoVO> list = videoUtils.batchToVO(userId, videos);
 
         boolean hasMore = false;
@@ -208,7 +219,7 @@ public class VideoInfoService {
 
 
     public Result<List<Video>> getRecentFavorites(Integer userId, int count) {
-        return null;
+        return Result.success(List.of());
     }
 
     public Result<List<Video>> getRecentHistories(Integer userId, int count) {
@@ -236,7 +247,17 @@ public class VideoInfoService {
     }
 
     public Result<List<Video>> getRecentWorks(Integer userId, int count) {
-        return null;
+
+        LambdaQueryWrapper<Video> wrapper = new LambdaQueryWrapper<Video>()
+                .eq(Video::getUploaderId, userId)
+                .last("LIMIT " + count)
+                .orderByDesc(Video::getPublishTime);
+        List<Video> videos = videoMapper.selectList(wrapper);
+        videos.forEach(v -> {
+            v.setCoverName(GatewayHttpPath.VIDEO_COVER_IMG + v.getCoverName());
+        });
+
+        return Result.success(videos);
     }
 
     /**
