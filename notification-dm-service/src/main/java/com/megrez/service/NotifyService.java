@@ -33,6 +33,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -57,11 +58,25 @@ public class NotifyService {
      * 获取通知列表
      *
      * @param userId 用户id
-     * @param type   类型，0：全部通知，1：粉丝，2：评论，3：获赞
+     * @param type   类型，0：全部通知，1：粉丝，2：获赞, 3：评论
      * @return 通知列表
      */
     public Result<List<NotificationVO>> getNotifications(Integer userId, Integer type) {
-        Query query = new Query(Criteria.where("userId").is(userId));
+        Criteria criteria = Criteria.where("userId").is(userId);
+
+        switch (type) {
+            case 0 -> {
+            }
+            case 1 -> criteria.and("type").is(1);
+            case 2 -> criteria.and("type").in(2, 3);
+            case 3 -> criteria.and("type").in(4, 5);
+            default -> {
+                return Result.success(List.of());
+            }
+        }
+
+        Query query = new Query(criteria);
+
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
 
         List<Notification> notifications = mongoTemplate.find(query, Notification.class);
@@ -205,24 +220,22 @@ public class NotifyService {
         }
         VideoVO videoInfoData = videoInfo.getData();
 
-        // 1. 自己回复自己的视频，不发送通知。
-        if (videoInfoData.getUploaderId().equals(comment.getUserId())) {
-            return;
-        }
-        // 2. 评论是根评论，则通知到视频上传者
+        // 如果是根评论，通知目标为视频作者
         if (comment.getIsRoot()) {
             targetUID = videoInfoData.getUploaderId();
             type = 4;
         } else {
-            VideoComments result = mongoTemplate.findById(comment.getReplyTargetId(), VideoComments.class);
-            // 3. 自己回复自己的评论，不发送通知。
-            assert result != null;
-            if (result.getUserId().equals(comment.getUserId())) {
-                return;
+            // 如果是回复，则通知目标为目标评论作者
+            VideoComments targetComment = mongoTemplate.findById(comment.getReplyTargetId(), VideoComments.class);
+            if (targetComment != null) {
+                targetUID = targetComment.getUserId();
+                type = 5;
             }
-            // 4. 评论是回复评论，则通知到目标评论的发表者
-            targetUID = result.getUserId();
-            type = 5;
+        }
+
+        // 如果最终通知目标就是这个评论的作者，则不作任何处理。
+        if (comment.getUserId().equals(targetUID)) {
+            return;
         }
 
         // 构建消息
@@ -237,7 +250,6 @@ public class NotifyService {
         mongoTemplate.insert(notification);
         // 给被通知者的通知未读数 + 1
         redisClient.incNotifyUnread(targetUID);
-
     }
 
     public Result<Integer> getUnreadCount(Integer uid) {

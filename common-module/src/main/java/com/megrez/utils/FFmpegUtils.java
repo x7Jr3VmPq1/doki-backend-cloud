@@ -52,6 +52,16 @@ public class FFmpegUtils {
         // 输出文件路径
         String outputPath = FilesServerPath.VIDEO_PATH + videoFilename + "\\video.mp4";
 
+
+        String[] ffmpegCommand = {
+                "ffmpeg",
+                "-i", originalVideoPath,
+                "-preset", "fast",
+                "-c:v", "libx264",
+                "-c:a", "aac",
+                "-r", "30",
+                outputPath
+        };
         // 构建FFmpeg转码命令
         String[] command = new String[]{
                 "ffmpeg",
@@ -122,36 +132,36 @@ public class FFmpegUtils {
                 "stream=width,height,r_frame_rate:format=duration,bit_rate,size",
                 originalVideoPath
         );
-        
+
         String jsonResult = CommandExecutor.executeCommand(command);
         if (jsonResult == null || jsonResult.trim().isEmpty()) {
             return null;
         }
-        
+
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(jsonResult);
-            
+
             // 解析streams数组中的第一个视频流
             JsonNode streams = rootNode.get("streams");
             JsonNode format = rootNode.get("format");
-            
-            if (streams == null || !streams.isArray() || streams.size() == 0) {
+
+            if (streams == null || !streams.isArray() || streams.isEmpty()) {
                 return null;
             }
-            
+
             JsonNode videoStream = streams.get(0);
-            
+
             // 提取视频流信息
             Integer width = videoStream.has("width") ? videoStream.get("width").asInt() : null;
             Integer height = videoStream.has("height") ? videoStream.get("height").asInt() : null;
             String frameRate = videoStream.has("r_frame_rate") ? videoStream.get("r_frame_rate").asText() : null;
-            
+
             // 提取格式信息
             Double duration = null;
             Long bitRate = null;
             Long fileSize = null;
-            
+
             if (format != null) {
                 if (format.has("duration")) {
                     try {
@@ -164,7 +174,7 @@ public class FFmpegUtils {
                         }
                     }
                 }
-                
+
                 if (format.has("bit_rate")) {
                     try {
                         bitRate = format.get("bit_rate").asLong();
@@ -176,7 +186,7 @@ public class FFmpegUtils {
                         }
                     }
                 }
-                
+
                 if (format.has("size")) {
                     try {
                         fileSize = format.get("size").asLong();
@@ -189,7 +199,7 @@ public class FFmpegUtils {
                     }
                 }
             }
-            
+
             // 如果FFprobe没有返回文件大小，尝试直接从文件系统获取
             if (fileSize == null) {
                 try {
@@ -201,7 +211,7 @@ public class FFmpegUtils {
                     System.err.println("无法获取文件大小: " + e.getMessage());
                 }
             }
-            
+
             return VideoMetadata.builder()
                     .width(width)
                     .height(height)
@@ -210,7 +220,7 @@ public class FFmpegUtils {
                     .bitRate(bitRate)
                     .fileSize(fileSize)
                     .build();
-                    
+
         } catch (Exception e) {
             System.err.println("解析视频元数据失败: " + e.getMessage());
             e.printStackTrace();
