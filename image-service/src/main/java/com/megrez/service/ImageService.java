@@ -68,6 +68,7 @@ public class ImageService {
             case USER_AVATAR -> filePath = Paths.get(FilesServerPath.AVATAR_PATH, filename);
             case VIDEO_COVER -> filePath = Paths.get(FilesServerPath.COVER_PATH, filename);
             case COMMENT_IMG -> filePath = Paths.get(FilesServerPath.COMMENT_IMG_PATH, filename);
+            case VIDEO_SPRITE -> filePath = Paths.get(FilesServerPath.SPRITE_PATH, filename);
             default -> throw new RuntimeException("参数异常");
         }
         // 2. 如果不存在这个文件，抛出异常

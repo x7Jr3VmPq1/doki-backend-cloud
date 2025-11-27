@@ -15,6 +15,12 @@ public class GatewayHttpPath {
      * 视频封面图服务器的HTTP地址
      */
     public static final String VIDEO_COVER_IMG = "http://localhost:10011/image/cover/";
+
+    /**
+     * 视频精灵图服务器的HTTP地址
+     */
+    public static final String VIDEO_SPRITE_IMG = "http://localhost:10011/image/sprite/";
+
     /**
      * 视频播放服务器的HTTP地址
      */

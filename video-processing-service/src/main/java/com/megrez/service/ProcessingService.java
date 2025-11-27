@@ -90,6 +90,15 @@ public class ProcessingService {
                 logger.error("获取视频元数据失败");
             }
 
+            assert videoMeta != null;
+            // 生成精灵图
+            Double duration = videoMeta.getDuration();
+            String scale = "160:-1";
+            String fps = duration >= 100 ? String.format("%s/%s", 100, duration) : "1";
+            String tile = duration >= 100 ? "10/10" : "10/" + (int) (Math.ceil(duration / 10));
+            FFmpegUtils.createSprite(videoFilename, scale, fps, tile);
+
+
         } catch (Exception e) {
             logger.error("视频处理失败: {}", e.getMessage(), e);
         }

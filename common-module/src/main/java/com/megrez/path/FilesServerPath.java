@@ -5,6 +5,8 @@ public class FilesServerPath {
     public static final String AVATAR_PATH = "D:\\doki-image-server\\user-avatar";
     // 封面图文件服务器地址
     public static final String COVER_PATH = "D:\\doki-image-server\\video-cover\\";
+    // 封面图文件服务器地址
+    public static final String SPRITE_PATH = "D:\\doki-image-server\\video-sprite\\";
     // 评论区图片服务器地址
     public static final String COMMENT_IMG_PATH = "D:\\doki-image-server\\comment";
     // 视频文件服务器地址

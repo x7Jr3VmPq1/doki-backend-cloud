@@ -4,11 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.megrez.mysql_entity.VideoMetadata;
 import com.megrez.path.FilesServerPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
 public class FFmpegUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(FFmpegUtils.class);
 
     public static boolean createThumbnail(String videoFilename) {
         // 输入视频路径
@@ -30,7 +34,34 @@ public class FFmpegUtils {
                 outputImage
         };
 
-        // 执行命令并返回执行结果
+        // 执行命令
+        return CommandExecutor.executeCommand(List.of(command)) != null;
+    }
+
+    public static boolean createSprite(String videoFilename, String scale, String fps, String tile) {
+
+        // 输入视频路径
+        String inputVideo = String.format("%s%s%s", FilesServerPath.VIDEO_PATH, videoFilename, "\\video.mp4");
+
+        // 截图输出路径
+        String outputPath = String.format("%s%s%s", FilesServerPath.SPRITE_PATH, videoFilename, ".jpg");
+
+        // 构建 -vf 选项
+        String vfFilter = String.format("\"fps=%s,scale=%s,tile=%s\"",
+                fps, scale, tile);
+        // 构建完整的命令数组
+        String[] command = new String[]{
+                "ffmpeg",
+                "-i",
+                inputVideo,
+                "-vf",
+                vfFilter,
+                "-frames:v",
+                "1",
+                outputPath
+        };
+
+        log.info("执行命令：{}", (Object) command);
         return CommandExecutor.executeCommand(List.of(command)) != null;
     }
 
@@ -41,7 +72,7 @@ public class FFmpegUtils {
      * @param videoFilename 视频文件名（不包含扩展名）
      * @return 是否转码成功
      */
-    public static boolean transcodeVideo(String videoFilename) {
+   /* public static boolean transcodeVideo(String videoFilename) {
         // 首先检测原始视频文件
         String originalVideoPath = findOriginalVideoFile(videoFilename);
         if (originalVideoPath == null) {
@@ -63,20 +94,21 @@ public class FFmpegUtils {
                 outputPath
         };
         // 构建FFmpeg转码命令
-        String[] command = new String[]{
-                "ffmpeg",
-                "-i", originalVideoPath,
-                "-c:v", "libx264",           // 视频编码器
-                "-c:a", "aac",               // 音频编码器
-                "-preset", "medium",         // 编码速度预设
-                "-crf", "23",                // 质量参数（18-28，越小质量越好）
-                "-maxrate", "2M",            // 最大码率
-                "-bufsize", "4M",            // 缓冲区大小
-                "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2", // 视频缩放和填充
-                "-movflags", "faststart",    // 优化网络播放
-                "-y",                        // 覆盖输出文件
-                outputPath
-        };
+//        String[] command = new String[]{
+//                "ffmpeg",
+//                "-i", originalVideoPath,
+//                "-map", "0:v",
+//                "-map", "0:a",
+//                "-s", "854x480", // 目标分辨率
+//                "-c:v", "libx264", // 视频编码器
+//                "-crf", "23",   // 质量因子
+//                "-c:a", "aac", // 音频编码器
+//                "-f", "hls",  // 输出为HLS
+//                "-hls_time", "6",   // 每个分片的期望时长 (秒)
+//                "-hls_list_size", "0",// 列表大小 0 表示包含所有分片
+//                outputPlaylist  // 输出列表路径
+//        };
+
 
         try {
             Process process = Runtime.getRuntime().exec(command);
@@ -86,7 +118,7 @@ public class FFmpegUtils {
             e.printStackTrace();
             return false;
         }
-    }
+    }*/
 
     /**
      * 查找原始视频文件
