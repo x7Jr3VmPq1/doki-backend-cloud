@@ -23,7 +23,7 @@ public class VideoPlayController {
 
     private static final Logger log = LoggerFactory.getLogger(VideoPlayController.class);
 
-    @GetMapping("/{filename}")
+    /*@GetMapping("/{filename}")
     public void streamVideo(
             @PathVariable String filename,
             @RequestHeader(value = "Range", required = false) String rangeHeader,
@@ -66,12 +66,12 @@ public class VideoPlayController {
                 bytesToRead -= len;
             }
         }
-    }
+    }*/
 
     // 获取m3u8
     @GetMapping("/{filename}/{m3u8}")
     public ResponseEntity<byte[]> play(@PathVariable("filename") String filename,
-                                       @PathVariable("m3u8") String m3u8) throws Exception {
+                                       @PathVariable("m3u8") String m3u8 ) throws Exception {
 
         log.info("获取m3u8:{}", filename);
         Path path = Paths.get(FilesServerPath.VIDEO_PATH, filename, m3u8);

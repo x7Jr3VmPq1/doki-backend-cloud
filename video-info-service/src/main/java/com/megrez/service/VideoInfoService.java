@@ -278,8 +278,7 @@ public class VideoInfoService {
     }
 
     public Result<List<VideoVO>> randomVideo(Integer uid) {
-        List<Video> videos = videoMapper.getRandomVideo();
-
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().last("ORDER BY RAND() LIMIT 5"));
         List<VideoVO> list = videoUtils.batchToVO(uid, videos);
         return Result.success(list);
     }

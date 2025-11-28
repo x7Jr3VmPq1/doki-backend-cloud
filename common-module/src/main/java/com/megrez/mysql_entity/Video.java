@@ -1,15 +1,13 @@
 package com.megrez.mysql_entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.ibatis.type.JdbcType;
 
 import java.util.List;
 
@@ -26,6 +24,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName(value = "video", autoResultMap = true)
 public class Video {
 
     /**
@@ -144,7 +143,7 @@ public class Video {
     /**
      * 可以选择的分辨率
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = JacksonTypeHandler.class, jdbcType = JdbcType.VARCHAR)
     private List<Integer> resolutions;
 
     /**
