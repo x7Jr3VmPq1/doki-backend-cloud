@@ -7,7 +7,6 @@ import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.mapper.VideoStatisticsMapper;
 import com.megrez.rabbit.exchange.VideoSubmitExchange;
-import com.megrez.utils.FFmpegUtils;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
 import org.slf4j.Logger;
@@ -16,6 +15,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 public class ProcessingService {
@@ -40,8 +40,6 @@ public class ProcessingService {
     @RabbitListener(queues = VideoSubmitExchange.QUEUE_VIDEO_PROCESSING)
     public void VideoProcessing(String draft) {
         try {
-            logger.info("开始处理视频草稿: {}", draft);
-
             // 解析草稿消息
             VideoDraft videoDraft = JSONUtils.fromJSON(draft, VideoDraft.class);
             String videoFilename = videoDraft.getFilename();
@@ -51,44 +49,13 @@ public class ProcessingService {
                 return;
             }
 
-
-            logger.info("处理视频文件: {}", videoFilename);
-
-
             // 生成视频缩略图
-            logger.info("开始生成视频缩略图...");
-            boolean thumbnailSuccess = FFmpegUtils.createThumbnail(videoFilename);
-            if (thumbnailSuccess) {
-                logger.info("视频缩略图生成成功");
-            } else {
-                logger.error("视频缩略图生成失败");
-            }
+            logger.info("开始生成视频缩略图:{}", videoFilename);
+            FFmpegUtils.createThumbnail(videoFilename);
 
             // 获取视频元数据信息
-            logger.info("获取视频元数据...");
+            logger.info("获取视频元数据:{}", videoFilename);
             VideoMetadata videoMeta = FFmpegUtils.getVideoMeta(videoFilename);
-            if (videoMeta != null) {
-                logger.info("视频元数据获取成功");
-                logger.info("视频元数据: {}", videoMeta);
-
-                // 创建Video对象，合并草稿数据和元数据
-                Video video = createVideoFromDraftAndMetadata(videoDraft, videoMeta, videoFilename);
-                logger.info("创建Video对象成功: {}", video);
-
-                try {
-                    // 发送发布视频消息
-                    rabbitMQUtils.sendMessage(
-                            VideoSubmitExchange.DIRECT_EXCHANGE_VIDEO_SUBMIT,
-                            VideoSubmitExchange.RK_VIDEO_PUBLISH,
-                            JSONUtils.toJSON(video)
-                    );
-
-                } catch (Exception e) {
-                    logger.error("插入视频数据到数据库时发生异常: {}", e.getMessage(), e);
-                }
-            } else {
-                logger.error("获取视频元数据失败");
-            }
 
             assert videoMeta != null;
             // 生成精灵图
@@ -96,8 +63,27 @@ public class ProcessingService {
             String scale = "160:-1";
             String fps = duration >= 100 ? String.format("%s/%s", 100, duration) : "1";
             String tile = duration >= 100 ? "10/10" : "10/" + (int) (Math.ceil(duration / 10));
+            logger.info("生成精灵图:{}", videoFilename);
             FFmpegUtils.createSprite(videoFilename, scale, fps, tile);
+            // 进行转码
+            logger.info("进行转码:{}", videoFilename);
+            List<Integer> resolutions = FFmpegUtils.transcodeVideo(videoFilename);
 
+            // 创建Video对象，合并草稿数据和元数据
+            Video video = createVideoFromDraftAndMetadata(videoDraft, videoMeta, videoFilename);
+            video.setResolutions(resolutions);
+            logger.info("创建Video对象成功: {}", video);
+
+            try {
+                // 发送发布视频消息
+                rabbitMQUtils.sendMessage(
+                        VideoSubmitExchange.DIRECT_EXCHANGE_VIDEO_SUBMIT,
+                        VideoSubmitExchange.RK_VIDEO_PUBLISH,
+                        JSONUtils.toJSON(video)
+                );
+            } catch (Exception e) {
+                logger.error("插入视频数据到数据库时发生异常: {}", e.getMessage(), e);
+            }
 
         } catch (Exception e) {
             logger.error("视频处理失败: {}", e.getMessage(), e);

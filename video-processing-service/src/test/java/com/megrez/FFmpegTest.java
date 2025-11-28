@@ -1,8 +1,10 @@
 package com.megrez;
 
-import com.megrez.utils.FFmpegUtils;
+import com.megrez.service.FFmpegUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.io.IOException;
 
 @SpringBootTest
 public class FFmpegTest {
@@ -18,4 +20,9 @@ public class FFmpegTest {
         System.out.println(FFmpegUtils.getVideoMeta("bf4c21a8-0d6b-4257-bc80-2a9f56718162"));
     }
 
+
+    @Test
+    void testTranscode() throws IOException {
+        System.out.println(FFmpegUtils.transcodeVideo("3c989be2-8ea5-4745-a6c2-76a234437268"));
+    }
 }

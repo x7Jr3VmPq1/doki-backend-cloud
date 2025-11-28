@@ -1,13 +1,17 @@
 package com.megrez.mysql_entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * 视频实体类
@@ -136,6 +140,12 @@ public class Video {
      * 封面图文件名
      */
     private String coverName;
+
+    /**
+     * 可以选择的分辨率
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Integer> resolutions;
 
     /**
      * 是否删除

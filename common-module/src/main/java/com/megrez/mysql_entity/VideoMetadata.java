@@ -7,12 +7,8 @@ import lombok.NoArgsConstructor;
 
 /**
  * 视频元数据实体类
- * 
  * 用于存储从FFmpeg获取的视频元数据信息
  * 包含视频的基本技术参数如分辨率、帧率、时长、码率等
- * 
- * @author Doki Team
- * @since 1.0.0
  */
 @Data
 @Builder

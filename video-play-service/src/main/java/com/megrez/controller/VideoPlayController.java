@@ -4,6 +4,8 @@ import com.megrez.path.FilesServerPath;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -11,6 +13,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/video/play")
@@ -62,6 +66,39 @@ public class VideoPlayController {
                 bytesToRead -= len;
             }
         }
+    }
+
+    // 获取m3u8
+    @GetMapping("/{filename}/{m3u8}")
+    public ResponseEntity<byte[]> play(@PathVariable("filename") String filename,
+                                       @PathVariable("m3u8") String m3u8) throws Exception {
+
+        log.info("获取m3u8:{}", filename);
+        Path path = Paths.get(FilesServerPath.VIDEO_PATH, filename, m3u8);
+
+        // 如果不存在这个文件，抛出异常
+        if (!Files.exists(path)) {
+            throw new RuntimeException("文件未找到");
+        }
+        // 找到，返回字节流
+        byte[] bytes = Files.readAllBytes(path);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.valueOf("application/x-mpegURL"))
+                .body(bytes);
+    }
+
+
+    @GetMapping("/{filename}/{p}/{tsFile}")
+    public ResponseEntity<byte[]> getTsFile(@PathVariable("filename") String filename,
+                                            @PathVariable("p") String p,
+                                            @PathVariable("tsFile") String tsFile
+    ) throws Exception {
+        Path path = Paths.get(FilesServerPath.VIDEO_PATH, filename, p, tsFile);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.valueOf("video/mp2t"))
+                .body(Files.readAllBytes(path));
     }
 
 }

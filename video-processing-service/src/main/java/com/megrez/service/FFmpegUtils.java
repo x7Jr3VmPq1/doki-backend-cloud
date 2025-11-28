@@ -1,13 +1,18 @@
-package com.megrez.utils;
+package com.megrez.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.megrez.mysql_entity.VideoMetadata;
 import com.megrez.path.FilesServerPath;
+import com.megrez.utils.CommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class FFmpegUtils {
@@ -66,59 +71,122 @@ public class FFmpegUtils {
     }
 
     /**
-     * 进行视频转码，统一转码为mp4格式
-     * 支持各种输入格式，输出为标准mp4格式
+     * 进行视频转码，统一转码为HLS
+     * 支持各种输入格式
      *
      * @param videoFilename 视频文件名（不包含扩展名）
-     * @return 是否转码成功
+     * @return 可供选择的分辨率
      */
-   /* public static boolean transcodeVideo(String videoFilename) {
+    public static List<Integer> transcodeVideo(String videoFilename) throws IOException {
         // 首先检测原始视频文件
         String originalVideoPath = findOriginalVideoFile(videoFilename);
         if (originalVideoPath == null) {
             System.err.println("未找到原始视频文件: " + videoFilename);
-            return false;
+            throw new IOException();
+        }
+        // 读取视频元数据
+        VideoMetadata videoMeta = getVideoMeta(videoFilename);
+
+        if (videoMeta == null) {
+            log.error("读取元数据失败");
+            throw new RuntimeException();
         }
 
-        // 输出文件路径
-        String outputPath = FilesServerPath.VIDEO_PATH + videoFilename + "\\video.mp4";
+        Integer height = videoMeta.getHeight();
+        Integer width = videoMeta.getWidth();
 
+        boolean isWidth = width > height;
 
-        String[] ffmpegCommand = {
-                "ffmpeg",
-                "-i", originalVideoPath,
-                "-preset", "fast",
-                "-c:v", "libx264",
-                "-c:a", "aac",
-                "-r", "30",
-                outputPath
-        };
-        // 构建FFmpeg转码命令
-//        String[] command = new String[]{
-//                "ffmpeg",
-//                "-i", originalVideoPath,
-//                "-map", "0:v",
-//                "-map", "0:a",
-//                "-s", "854x480", // 目标分辨率
-//                "-c:v", "libx264", // 视频编码器
-//                "-crf", "23",   // 质量因子
-//                "-c:a", "aac", // 音频编码器
-//                "-f", "hls",  // 输出为HLS
-//                "-hls_time", "6",   // 每个分片的期望时长 (秒)
-//                "-hls_list_size", "0",// 列表大小 0 表示包含所有分片
-//                outputPlaylist  // 输出列表路径
-//        };
+        List<Integer> targetResolutions = ResolutionTemplate.getTargetResolutions(width, height);
 
+        StringBuilder masterContent = new StringBuilder();
+        masterContent.append("#EXTM3U\n");
+        masterContent.append("#EXT-X-VERSION:3\n"); // 确保版本兼容性
 
-        try {
-            Process process = Runtime.getRuntime().exec(command);
-            int exitCode = process.waitFor();
-            return exitCode == 0;
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            return false;
+        // 获取视频根目录路径
+        Path videoRootPath = Paths.get(FilesServerPath.VIDEO_PATH, videoFilename);
+        Path masterM3u8Path = videoRootPath.resolve("master.m3u8");
+
+        for (Integer resolution : targetResolutions) {
+
+            long estimatedBandwidth = estimateBandwidth(resolution);
+
+            String relativePath = resolution + "/index.m3u8";
+
+            String streamInf = String.format(
+                    "#EXT-X-STREAM-INF:BANDWIDTH=%d,RESOLUTION=%dx%d,CODECS=\"avc1.42c01e,mp4a.40.2\"\n",
+                    estimatedBandwidth,
+                    (isWidth ? (int) Math.round((double) resolution * width / height) : resolution), // 宽度 (估算)
+                    (isWidth ? resolution : (int) Math.round((double) resolution * height / width))  // 高度 (估算)
+            );
+
+            masterContent.append(streamInf);
+            masterContent.append(relativePath).append("\n");
+
+            String resolutionParam = isWidth ? "scale=-2:" + resolution : "scale=" + resolution + ":-2";
+
+            Path outputDir = Paths.get(
+                    FilesServerPath.VIDEO_PATH,
+                    videoFilename,
+                    String.valueOf(resolution) // 当前分辨率
+            );
+            // 创建目录及其所有父目录
+            try {
+                Files.createDirectories(outputDir);
+            } catch (IOException e) {
+                // 如果目录创建失败，则无法进行转码，打印错误并跳过或返回 false
+                System.err.println("创建输出目录失败: " + outputDir);
+                e.printStackTrace();
+                // 选择是跳过当前分辨率 (continue) 还是直接退出转码 (return false)
+                throw new RuntimeException();
+            }
+
+            String outputPath = outputDir.resolve("index.m3u8").toString();
+
+            // 构建转码命令
+            String[] command = new String[]{
+                    "ffmpeg",
+                    "-i", originalVideoPath,
+                    "-map", "0:v",
+                    "-map", "0:a",
+                    "-vf", resolutionParam, // 目标分辨率
+                    "-c:v", "libx264", // 视频编码器
+                    "-crf", "23",   // 质量因子
+                    "-c:a", "aac", // 音频编码器
+                    "-f", "hls",  // 输出为HLS
+                    "-hls_time", "6",   // 每个分片的期望时长 (秒)
+                    "-hls_list_size", "0",// 列表大小 0 表示包含所有分片
+                    outputPath  // 输出列表路径
+            };
+            try {
+                ProcessBuilder pb = new ProcessBuilder(command);
+
+                pb.inheritIO();
+
+                Process process = pb.start();
+
+                int exitCode = process.waitFor();
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                throw new IOException();
+            }
         }
-    }*/
+
+        // 写入 Master M3U8 文件
+        Files.writeString(masterM3u8Path, masterContent.toString());
+        log.info("成功创建 Master M3U8 文件: {}", masterM3u8Path);
+        // 返回可供选择的分辨率
+        return targetResolutions;
+    }
+
+    // ... (辅助函数，用于估算码率)
+    private static long estimateBandwidth(int resolution) {
+        if (resolution <= 360) return 400_000;      // 400 kbps
+        if (resolution <= 480) return 800_000;      // 800 kbps
+        if (resolution <= 720) return 1_500_000;    // 1.5 Mbps
+        if (resolution <= 1080) return 3_000_000;   // 3.0 Mbps
+        return 5_000_000;                           // 5.0 Mbps
+    }
 
     /**
      * 查找原始视频文件
