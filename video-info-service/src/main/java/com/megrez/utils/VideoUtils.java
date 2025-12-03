@@ -4,7 +4,6 @@ import com.megrez.client.AnalyticsServiceClient;
 import com.megrez.client.LikeFavoriteClient;
 import com.megrez.client.UserServiceClient;
 import com.megrez.constant.GatewayHttpPath;
-import com.megrez.mysql_entity.User;
 import com.megrez.mysql_entity.Video;
 import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.mysql_entity.VideoStatistics;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Component
 public class VideoUtils {
@@ -35,6 +33,14 @@ public class VideoUtils {
         this.userServiceClient = userServiceClient;
     }
 
+    /**
+     * 这是一个用来批量把Video转换为VideoVO的方法
+     *
+     * @param uid  用户ID
+     * @param list Video列表
+     * @return VideoVO列表
+     * @throws RuntimeException
+     */
     public List<VideoVO> batchToVO(Integer uid, List<Video> list) throws RuntimeException {
         List<Integer> vIds = list.stream().map(Video::getId).toList();
         List<Integer> uploaderIds = list.stream().map(Video::getUploaderId).toList();
@@ -45,7 +51,7 @@ public class VideoUtils {
         // 获取视频上传者信息和是否关注信息
         Result<List<UsersVO>> userinfoByIdWithIfFollowed = userServiceClient.getUserinfoByIdWithIfFollowed(uid, uploaderIds);
         // 获取点赞情况
-        Result<List<VideoLikes>> recordsByBatchVIds = likeFavoriteClient.getRecordsByBatchVIds(uid, vIds);
+        Result<List<VideoLikes>> recordsByBatchVIds = likeFavoriteClient.getLikeRecordsByBatchVIds(uid, vIds);
         // 判断调用成功情况
         boolean success = Result.allSuccess(List.of(videoWatched, videoStatById, userinfoByIdWithIfFollowed, recordsByBatchVIds));
         if (!success) {

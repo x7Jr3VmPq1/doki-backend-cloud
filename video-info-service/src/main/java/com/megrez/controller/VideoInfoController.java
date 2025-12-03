@@ -78,19 +78,21 @@ public class VideoInfoController {
         log.info("获取用户点赞视频信息：{}", tid);
         return videoInfoService.getLikeVideosInfoByUserId(uid, tid, cursor);
     }
-//
-//    /**
-//     * 获取用户收藏的视频
-//     *
-//     * @param targetUid 目标用户ID
-//     * @return 用户收藏视频集合
-//     */
-//    @GetMapping("/favorites")
-//    public Result<List<Video>> getFavoriteInfoByUserId(@CurrentUser(required = false) Integer userId, @RequestParam Integer targetUid) {
-//        log.info("获取用户收藏视频信息：{}", targetUid);
-//        return videoInfoService.getFavoriteInfoByUserId(userId, targetUid);
-//    }
-//
+
+    /**
+     * 获取用户收藏的视频
+     *
+     * @param tid 目标用户ID
+     * @return 用户收藏视频集合
+     */
+    @GetMapping("/favorites")
+    public Result<CursorLoad<VideoVO>> getFavoriteInfoByUserId(@CurrentUser(required = false) Integer uid,
+                                                               @RequestParam Integer tid,
+                                                               @RequestParam(required = false) String cursor) {
+        log.info("获取用户收藏视频信息：{}", tid);
+        return videoInfoService.getFavoriteInfoByUserId(uid, tid, cursor);
+    }
+
 
     /**
      * 获取用户的历史观看记录

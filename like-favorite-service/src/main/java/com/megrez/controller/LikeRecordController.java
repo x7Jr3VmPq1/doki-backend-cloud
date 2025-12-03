@@ -12,26 +12,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 获取用户对视频的点赞记录
  */
 @RestController
 @RequestMapping("/like")
-public class RecordController {
-    private static final Logger log = LoggerFactory.getLogger(RecordController.class);
+public class LikeRecordController {
+    private static final Logger log = LoggerFactory.getLogger(LikeRecordController.class);
 
     private final RecordService recordService;
 
-    public RecordController(RecordService recordService) {
+    public LikeRecordController(RecordService recordService) {
         this.recordService = recordService;
     }
 
     @GetMapping("/records")
     public Result<CursorLoad<VideoLikes>> getRecordsByUserId(Integer userId, String cursor) throws Exception {
         log.info("获取用户点赞记录，ID：{}", userId);
-        return recordService.getRecordsByUserId(userId, cursor);
+        return recordService.getLikeRecordsByUserId(userId, cursor);
     }
 
 

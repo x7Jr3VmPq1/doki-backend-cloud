@@ -1,9 +1,10 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.megrez.mapper.FavoriteMapper;
 import com.megrez.mapper.LikeMapper;
+import com.megrez.mysql_entity.VideoFavorites;
 import com.megrez.mysql_entity.VideoLikes;
-import com.megrez.mapper.RecordMapper;
 import com.megrez.result.Result;
 import com.megrez.utils.PageTokenUtils;
 import com.megrez.vo.CursorLoad;
@@ -14,15 +15,15 @@ import java.util.List;
 @Service
 public class RecordService {
 
-    private final RecordMapper recordMapper;
     private final LikeMapper likeMapper;
+    private final FavoriteMapper favoriteMapper;
 
-    public RecordService(RecordMapper recordMapper, LikeMapper likeMapper) {
-        this.recordMapper = recordMapper;
+    public RecordService(LikeMapper likeMapper, FavoriteMapper favoriteMapper) {
         this.likeMapper = likeMapper;
+        this.favoriteMapper = favoriteMapper;
     }
 
-    public Result<CursorLoad<VideoLikes>> getRecordsByUserId(Integer userId, String cursor) throws Exception {
+    public Result<CursorLoad<VideoLikes>> getLikeRecordsByUserId(Integer userId, String cursor) throws Exception {
         LambdaQueryWrapper<VideoLikes> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(VideoLikes::getUserId, userId);
         wrapper.orderByDesc(VideoLikes::getCreatedAt);
@@ -34,7 +35,7 @@ public class RecordService {
         }
         wrapper.last("LIMIT 21");
 
-        List<VideoLikes> videoLikes = recordMapper.selectList(wrapper);
+        List<VideoLikes> videoLikes = likeMapper.selectList(wrapper);
 
         boolean hasMore = false;
         cursor = null;
@@ -45,6 +46,31 @@ public class RecordService {
         }
 
         return Result.success(CursorLoad.of(videoLikes, hasMore, cursor));
+    }
+
+    public Result<CursorLoad<VideoFavorites>> getFavoriteRecordsByUserId(Integer userId, String cursor) throws Exception {
+        LambdaQueryWrapper<VideoFavorites> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(VideoFavorites::getUserId, userId);
+        wrapper.orderByDesc(VideoFavorites::getCreatedAt);
+        wrapper.orderByDesc(VideoFavorites::getId);
+        if (cursor != null) {
+            VideoFavorites videoFavorites = PageTokenUtils.decryptState(cursor, VideoFavorites.class);
+            wrapper.le(VideoFavorites::getCreatedAt, videoFavorites.getCreatedAt());
+            wrapper.ne(VideoFavorites::getId, videoFavorites.getId());
+        }
+        wrapper.last("LIMIT 21");
+
+        List<VideoFavorites> videoFavorites = favoriteMapper.selectList(wrapper);
+
+        boolean hasMore = false;
+        cursor = null;
+        if (videoFavorites.size() > 20) {
+            videoFavorites = videoFavorites.subList(0, videoFavorites.size() - 1);
+            hasMore = true;
+            cursor = PageTokenUtils.encryptState(videoFavorites.get(videoFavorites.size() - 1));
+        }
+
+        return Result.success(CursorLoad.of(videoFavorites, hasMore, cursor));
     }
 
     public Result<List<VideoLikes>> getRecordsByCount(Integer userId, Integer count) {

@@ -46,7 +46,7 @@ public class VideoUtils {
         // 获取视频上传者信息和是否关注信息
         Result<List<UsersVO>> userinfoByIdWithIfFollowed = userServiceClient.getUserinfoByIdWithIfFollowed(uid, uploaderIds);
         // 获取点赞情况
-        Result<List<VideoLikes>> recordsByBatchVIds = likeFavoriteClient.getRecordsByBatchVIds(uid, vIds);
+        Result<List<VideoLikes>> recordsByBatchVIds = likeFavoriteClient.getLikeRecordsByBatchVIds(uid, vIds);
         // 判断调用成功情况
         boolean success = Result.allSuccess(List.of(videoWatched, videoStatById, userinfoByIdWithIfFollowed, recordsByBatchVIds));
         if (!success) {

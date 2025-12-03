@@ -13,10 +13,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class VideoVO extends Video {
+
     private VideoStatistics statistics; // 统计数据
+
     private User user;  // 用户信息
-    private Boolean liked; // 是否点过赞
-    private Boolean followed; // 是否关注了上传者
+
+    private Boolean liked = false; // 是否点赞
+
+    private Boolean favorited = false; // 是否收藏
+
+    private Boolean followed = false; // 是否关注了上传者
+
     private Double watchedTime = 0.0; // 已观看时长
-    private Long watchedAt; // 观看时间
+
+    private Long watchedAt = 0L; // 观看时间
 }

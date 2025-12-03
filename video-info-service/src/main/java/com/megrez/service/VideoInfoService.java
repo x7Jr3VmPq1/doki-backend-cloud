@@ -1,12 +1,8 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.megrez.client.AnalyticsServiceClient;
-import com.megrez.client.LikeFavoriteClient;
-import com.megrez.client.SocialServiceClient;
-import com.megrez.client.UserServiceClient;
+import com.megrez.client.*;
 import com.megrez.constant.GatewayHttpPath;
-import com.megrez.dto.social_service.CheckFollowDTO;
 import com.megrez.mysql_entity.*;
 import com.megrez.mapper.VideoMapper;
 import com.megrez.result.Response;
@@ -16,19 +12,15 @@ import com.megrez.utils.PageTokenUtils;
 import com.megrez.utils.VideoUtils;
 import com.megrez.vo.CursorLoad;
 import com.megrez.vo.analytics_service.VideoHistory;
-import com.megrez.vo.analytics_service.VideoWatched;
 import com.megrez.vo.video_info_service.VideoVO;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class VideoInfoService {
@@ -36,16 +28,12 @@ public class VideoInfoService {
     private final VideoMapper videoMapper;
     private final LikeFavoriteClient likeFavoriteClient;
     private final AnalyticsServiceClient analyticsServiceClient;
-    private final UserServiceClient userServiceClient;
-    private final SocialServiceClient socialServiceClient;
     private final VideoUtils videoUtils;
 
-    public VideoInfoService(VideoMapper videoMapper, LikeFavoriteClient likeFavoriteClient, AnalyticsServiceClient analyticsServiceClient, UserServiceClient userServiceClient, SocialServiceClient socialServiceClient, VideoUtils videoUtils) {
+    public VideoInfoService(VideoMapper videoMapper, LikeFavoriteClient likeFavoriteClient, AnalyticsServiceClient analyticsServiceClient, VideoUtils videoUtils) {
         this.videoMapper = videoMapper;
         this.likeFavoriteClient = likeFavoriteClient;
         this.analyticsServiceClient = analyticsServiceClient;
-        this.userServiceClient = userServiceClient;
-        this.socialServiceClient = socialServiceClient;
         this.videoUtils = videoUtils;
     }
 
@@ -108,7 +96,7 @@ public class VideoInfoService {
     public Result<CursorLoad<VideoVO>> getLikeVideosInfoByUserId(Integer userId, Integer tid, String cursor) {
 
         // 1. 视频服务调用点赞服务询问目标用户点赞记录
-        Result<CursorLoad<VideoLikes>> recordsByUserId = likeFavoriteClient.getRecordsByUserId(tid, cursor);
+        Result<CursorLoad<VideoLikes>> recordsByUserId = likeFavoriteClient.getLikeRecordsByUserId(tid, cursor);
         List<Integer> ids = List.of(); // 视频ID数组
         if (recordsByUserId.isSuccess()) {
             List<VideoLikes> list = recordsByUserId.getData().getList();
@@ -134,6 +122,36 @@ public class VideoInfoService {
         List<VideoVO> list = videoUtils.batchToVO(userId, videos);
 
         return Result.success(CursorLoad.of(list, hasMore, cursor));
+
+    }
+
+    public Result<CursorLoad<VideoVO>> getFavoriteInfoByUserId(Integer uid, Integer tid, String cursor) {
+
+        Result<CursorLoad<VideoFavorites>> favoriteRecordsByUserId = likeFavoriteClient.getFavoriteRecordsByUserId(tid, cursor);
+
+        if (!favoriteRecordsByUserId.isSuccess()) {
+            log.error("收藏服务调用失败。。。");
+            throw new RuntimeException();
+        }
+
+        CursorLoad<VideoFavorites> records = favoriteRecordsByUserId.getData();
+        List<VideoFavorites> videoFavorites = records.getList();
+
+        if (videoFavorites.isEmpty()) {
+            return Result.success(CursorLoad.empty());
+        }
+
+        List<Integer> vIds = CollectionUtils.toList(videoFavorites, VideoFavorites::getVideoId);
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().in(Video::getId, vIds));
+
+        // 排序
+        Map<Integer, Video> videoMap = CollectionUtils.toMap(videos, Video::getId);
+        videos = vIds.stream().map(videoMap::get).toList();
+
+        List<VideoVO> list = videoUtils.batchToVO(uid, videos);
+
+        return Result.success(CursorLoad.of(list, records.getHasMore(), records.getCursor()));
+
     }
 
     public Result<CursorLoad<VideoVO>> getHistoryInfoByUserId(Integer userId, Long cursor) {
@@ -193,7 +211,7 @@ public class VideoInfoService {
     }
 
     public Result<List<Video>> getRecentLikes(Integer userId, int count) {
-        Result<List<VideoLikes>> recordsByCount = likeFavoriteClient.getRecordsByCount(userId, count);
+        Result<List<VideoLikes>> recordsByCount = likeFavoriteClient.getLikeRecordsByCount(userId, count);
 
         if (!recordsByCount.isSuccess()) {
             log.error("点赞/收藏服务调用失败");
@@ -284,8 +302,4 @@ public class VideoInfoService {
     }
 
 
-//
-//    public Result<List<Video>> getFavoriteInfoByUserId(Integer userId, Integer targetId) {
-//    }
-//
 }

@@ -89,6 +89,7 @@ public class VideoPlayController {
     }
 
 
+    // 获取分片
     @GetMapping("/{filename}/{p}/{tsFile}")
     public ResponseEntity<byte[]> getTsFile(@PathVariable("filename") String filename,
                                             @PathVariable("p") String p,

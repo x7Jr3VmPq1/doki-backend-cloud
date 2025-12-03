@@ -8,6 +8,7 @@ import com.megrez.utils.CommandExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -20,9 +21,12 @@ public class FFmpegUtils {
     private static final Logger log = LoggerFactory.getLogger(FFmpegUtils.class);
 
     public static boolean createThumbnail(String videoFilename) {
-        // 输入视频路径
-        String inputVideo = FilesServerPath.VIDEO_PATH + videoFilename + "\\video.mp4";
+        // 查找视频原始路径
+        String originalPath = FFmpegUtils.findOriginalVideoFile(videoFilename);
 
+        if (originalPath == null) {
+            throw new RuntimeException();
+        }
         // 截图输出路径
         String outputImage = FilesServerPath.COVER_PATH + videoFilename + ".jpg";
 
@@ -33,7 +37,7 @@ public class FFmpegUtils {
         String[] command = new String[]{
                 "ffmpeg",
                 "-ss", timestamp,
-                "-i", inputVideo,
+                "-i", originalPath,
                 "-frames:v", "1",
                 "-q:v", "2",
                 outputImage
@@ -45,8 +49,12 @@ public class FFmpegUtils {
 
     public static boolean createSprite(String videoFilename, String scale, String fps, String tile) {
 
-        // 输入视频路径
-        String inputVideo = String.format("%s%s%s", FilesServerPath.VIDEO_PATH, videoFilename, "\\video.mp4");
+        // 查找视频原始路径
+        String originalPath = FFmpegUtils.findOriginalVideoFile(videoFilename);
+
+        if (originalPath == null) {
+            throw new RuntimeException();
+        }
 
         // 截图输出路径
         String outputPath = String.format("%s%s%s", FilesServerPath.SPRITE_PATH, videoFilename, ".jpg");
@@ -58,7 +66,7 @@ public class FFmpegUtils {
         String[] command = new String[]{
                 "ffmpeg",
                 "-i",
-                inputVideo,
+                originalPath,
                 "-vf",
                 vfFilter,
                 "-frames:v",
@@ -195,7 +203,7 @@ public class FFmpegUtils {
      * @param videoFilename 视频文件名（不包含扩展名）
      * @return 原始视频文件完整路径，未找到返回null
      */
-    private static String findOriginalVideoFile(String videoFilename) {
+    public static String findOriginalVideoFile(String videoFilename) {
         String[] videoExtensions = {".mp4", ".avi", ".mov", ".mkv", ".webm", ".flv", ".wmv", ".m4v", ".3gp"};
         String basePath = FilesServerPath.VIDEO_PATH + videoFilename + "\\";
 

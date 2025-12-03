@@ -1,5 +1,6 @@
 package com.megrez.client;
 
+import com.megrez.mysql_entity.VideoFavorites;
 import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.result.Result;
 import com.megrez.vo.CursorLoad;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 // 一定记得在RequestParam里写上参数名字，不然无法正确绑定！
-@FeignClient(name = "like-favorite-service", path = "/like")
+@FeignClient(name = "like-favorite-service")
 public interface LikeFavoriteClient {
 
     /**
@@ -20,7 +21,7 @@ public interface LikeFavoriteClient {
      * @param videoId 视频ID
      * @return 判断结果
      */
-    @GetMapping("/exist")
+    @GetMapping("/like/exist")
     Result<Boolean> existLikeRecord(
             @RequestParam("userId") Integer userId,
             @RequestParam("videoId") Integer videoId
@@ -33,8 +34,8 @@ public interface LikeFavoriteClient {
      * @param cursor 游标
      * @return 点赞记录集合
      */
-    @GetMapping("/records")
-    Result<CursorLoad<VideoLikes>> getRecordsByUserId(
+    @GetMapping("/like/records")
+    Result<CursorLoad<VideoLikes>> getLikeRecordsByUserId(
             @RequestParam("userId") Integer userId,
             @RequestParam("cursor") String cursor);
 
@@ -46,9 +47,9 @@ public interface LikeFavoriteClient {
      * @param count  数量
      * @return 点赞记录
      */
-    @GetMapping("/records/count")
-    Result<List<VideoLikes>> getRecordsByCount(@RequestParam("userId") Integer userId,
-                                               @RequestParam("count") Integer count);
+    @GetMapping("/like/records/count")
+    Result<List<VideoLikes>> getLikeRecordsByCount(@RequestParam("userId") Integer userId,
+                                                   @RequestParam("count") Integer count);
 
 
     /**
@@ -58,7 +59,29 @@ public interface LikeFavoriteClient {
      * @param vid 视频ID
      * @return 点赞记录
      */
-    @GetMapping("/records/batch")
-    Result<List<VideoLikes>> getRecordsByBatchVIds(@RequestParam("uid") Integer uid,
-                                                   @RequestParam("vid") List<Integer> vid);
+    @GetMapping("/like/records/batch")
+    Result<List<VideoLikes>> getLikeRecordsByBatchVIds(@RequestParam("uid") Integer uid,
+                                                       @RequestParam("vid") List<Integer> vid);
+
+
+    /**
+     * 获取收藏记录
+     *
+     * @param uid 用户ID
+     * @return 收藏记录列表
+     */
+    @GetMapping("/favorite")
+    Result<List<VideoFavorites>> getFavorite(@RequestParam("uid") Integer uid);
+
+    /**
+     * 游标获取收藏记录
+     *
+     * @param uid    用户id
+     * @param cursor 游标
+     * @return 收藏列表
+     */
+    @GetMapping("/favorite/records")
+    Result<CursorLoad<VideoFavorites>> getFavoriteRecordsByUserId(@RequestParam("uid") Integer uid,
+                                                                  @RequestParam("cursor") String cursor);
+
 }
