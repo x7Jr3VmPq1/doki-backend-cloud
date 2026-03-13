@@ -27,6 +27,12 @@ public class RecordService {
         LambdaQueryWrapper<VideoLikes> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(VideoLikes::getUserId, userId);
         wrapper.orderByDesc(VideoLikes::getCreatedAt);
+
+        // .。。
+
+        // 。。。
+
+        // 。。
         wrapper.orderByDesc(VideoLikes::getId);
         if (cursor != null) {
             VideoLikes videoLikes = PageTokenUtils.decryptState(cursor, VideoLikes.class);

@@ -4,11 +4,16 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.megrez.mysql_entity.Video;
 import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.mapper.VideoMapper;
+import com.megrez.utils.ContentLibrary;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 @SpringBootTest
 public class TestInsertVideos {
@@ -19,46 +24,35 @@ public class TestInsertVideos {
     @Autowired
     StatMapper statMapper;
 
-    /**
-     * 插入100条测试视频
-     */
     @Test
-    public void testInsertVideos() {
-        for (int i = 1; i <= 100; i++) {
-            Video video = Video.builder().title("测试视频" + i)
-                    .description("这是第" + i + "个测试视频的描述")
-                    .uploaderId(10001)
-                    .tags("测试,视频,示例")
-                    .categoryId(1)
-                    .videoFilename("fd0fb2bf-2274-42fe-bf40-907bfd7ac2b6")
-                    .videoSize(1024L * 1024 * 50) // 50MB
-                    .videoDuration(60 + i) // 60秒到159秒
-                    .videoFormat(".mp4")
-                    .videoWidth(1920)
-                    .videoHeight(1080)
-                    .videoBitrate(2000) // 2Mbps
-                    .publishTime(System.currentTimeMillis())
-                    .permission(1) // 公开
-                    .allowComment(1) // 允许评论
-                    .createdTime(System.currentTimeMillis())
-                    .updatedTime(System.currentTimeMillis())
-                    .coverName("default.jpg")
-                    .isTest(true)
-                    .build();
+    public void insert() {
+        // 获取原始数据
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().eq(Video::getIsTest, 0));
+        for (int i = 0; i < 5; i++) {
+            // 随机取一条
+            Video video = videos.get(new Random().nextInt(videos.size()));
+            // 获取测试用分类和标题
+            Map.Entry<String, String> randomEntry = ContentLibrary.getRandomEntry();
+            assert randomEntry != null;
+            video.setTags(randomEntry.getKey());
+            video.setTitle(randomEntry.getValue());
+            video.setId(null);
+            video.setIsTest(1);
+            // 插入视频表
             videoMapper.insert(video);
-            VideoStatistics videoStatistics = new VideoStatistics();
-            videoStatistics.setVideoId(video.getId());
-            videoStatistics.setTest(true);
-            statMapper.insert(videoStatistics);
-            log.info("插入第 {} 条测试数据成功。{}", i, video);
+            // 插入统计表
+            VideoStatistics statistics = new VideoStatistics();
+            statistics.setVideoId(video.getId());
+            statistics.setTags(video.getTags());
+            statistics.setIsTest(1);
+
+            long nextInt = new Random().nextInt(100000);
+            statistics.setViewCount(nextInt);
+            statistics.setLikeCount((long) (nextInt * 0.1));
+            statistics.setCommentCount((long) (nextInt * 0.01));
+            statistics.setFavoriteCount((long) (nextInt * 0.005));
+
+            statMapper.insert(statistics);
         }
     }
-
-    @Test
-    public void deleteTestData() {
-        statMapper.delete(new LambdaQueryWrapper<VideoStatistics>().eq(VideoStatistics::isTest, true));
-        videoMapper.delete(new LambdaQueryWrapper<Video>().eq(Video::isTest, true));
-    }
-
-
 }

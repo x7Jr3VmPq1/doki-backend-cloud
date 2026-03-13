@@ -1,13 +1,17 @@
 package com.megrez.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.megrez.mapper.StatMapper;
 import com.megrez.mysql_entity.VideoLikes;
 import com.megrez.mapper.LikeMapper;
+import com.megrez.mysql_entity.VideoStatistics;
 import com.megrez.rabbit.message.VideoLikeMessage;
 import com.megrez.rabbit.exchange.VideoLikeExchange;
+import com.megrez.redis.FeedRedisClient;
 import com.megrez.result.Result;
 import com.megrez.utils.JSONUtils;
 import com.megrez.utils.RabbitMQUtils;
+import com.megrez.utils.RedisUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,10 +23,14 @@ public class LikeService {
     private static final Logger log = LoggerFactory.getLogger(LikeService.class);
     private final LikeMapper likeMapper;
     private final RabbitMQUtils rabbitMQUtils;
+    private final FeedRedisClient feedRedisClient;
+    private final StatMapper statMapper;
 
-    public LikeService(LikeMapper likeMapper, RabbitMQUtils rabbitMQUtils) {
+    public LikeService(LikeMapper likeMapper, RabbitMQUtils rabbitMQUtils, RedisUtils redisUtils, FeedRedisClient feedRedisClient, StatMapper statMapper) {
         this.likeMapper = likeMapper;
         this.rabbitMQUtils = rabbitMQUtils;
+        this.feedRedisClient = feedRedisClient;
+        this.statMapper = statMapper;
     }
 
 
@@ -53,6 +61,16 @@ public class LikeService {
             likeMapper.insert(likes);
             // 消息类型：点赞
             videoLikeMessage.setType(1);
+
+            // 更新用户偏好
+            // 先查询对应的标签
+            LambdaQueryWrapper<VideoStatistics> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(VideoStatistics::getVideoId, videoId).last("LIMIT 1");
+            VideoStatistics statistics = statMapper.selectOne(queryWrapper);
+            // 更新模型
+            if (!statistics.getTags().isEmpty()) {
+                feedRedisClient.refreshModel(userId, statistics.getTags());
+            }
         } else {
             // 存在，删除记录
             likeMapper.delete(

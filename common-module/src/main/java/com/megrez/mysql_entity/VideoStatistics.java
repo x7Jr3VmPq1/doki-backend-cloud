@@ -38,6 +38,11 @@ public class VideoStatistics {
     private Integer videoId;
 
     /**
+     * 视频TAG
+     */
+    private String tags;
+
+    /**
      * 播放次数
      * 视频被播放的总次数
      */

@@ -296,6 +296,7 @@ public class VideoInfoService {
     }
 
     public Result<List<VideoVO>> randomVideo(Integer uid) {
+        // 如果登录了，走个性化推荐逻辑，否则走随机推荐
         List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>().last("ORDER BY RAND() LIMIT 5"));
         List<VideoVO> list = videoUtils.batchToVO(uid, videos);
         return Result.success(list);
