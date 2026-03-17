@@ -8,6 +8,9 @@ public class CommentAddExchange {
     // 评论通知队列
     public static final String QUEUE_COMMENT_ADD_NOTIFICATION = "comment.add.notification.queue";
 
+    // 评论审核队列
+    public static final String QUEUE_COMMENT_ADD_AUDIT = "comment.add.audit.queue";
+
     // 评论统计队列
     public static final String QUEUE_COMMENT_ADD_ANALYTICS = "comment.add.analytics.queue";
 }

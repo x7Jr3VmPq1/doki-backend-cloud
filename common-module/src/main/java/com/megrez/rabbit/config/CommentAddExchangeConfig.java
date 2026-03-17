@@ -30,6 +30,12 @@ public class CommentAddExchangeConfig {
         return new Queue(CommentAddExchange.QUEUE_COMMENT_ADD_NOTIFICATION, true);
     }
 
+    // 定义评论添加审核队列
+    @Bean(CommentAddExchange.QUEUE_COMMENT_ADD_AUDIT)
+    public Queue commentAddAuditQueue() {
+        return new Queue(CommentAddExchange.QUEUE_COMMENT_ADD_AUDIT, true);
+    }
+
     // 绑定统计队列到交换机
     @Bean
     public Binding bindingCommentAddAnalyticsQueueToExchange(
@@ -37,6 +43,15 @@ public class CommentAddExchangeConfig {
             @Qualifier(CommentAddExchange.FANOUT_EXCHANGE_COMMENT_ADD) FanoutExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange);
     }
+
+    // 绑定审核队列到交换机
+    @Bean
+    public Binding bindingCommentAddAuditQueueToExchange(
+            @Qualifier(CommentAddExchange.QUEUE_COMMENT_ADD_AUDIT) Queue queue,
+            @Qualifier(CommentAddExchange.FANOUT_EXCHANGE_COMMENT_ADD) FanoutExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange);
+    }
+
 
     // 绑定通知队列到交换机
     @Bean
